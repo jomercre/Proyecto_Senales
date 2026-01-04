@@ -24,12 +24,20 @@ for (archivo in archivos) {
   img_final <- resize(img, size_x = nuevo_ancho, size_y = nuevo_alto)
   
   # Guardar imagen procesada
-  nombre_archivo <- basename(archivo)
-  ruta_salida <- paste0("fotos_clean/", "clean_", nombre_archivo)
+  nombre_archivo <- tools::file_path_sans_ext(basename(archivo))
+  ruta_salida <- paste0("fotos_clean/", "clean_", nombre_archivo, ".jpg")
   
   save.image(img_final, ruta_salida)
   
   print(paste("Procesada:", nombre_archivo, "-> Dimensiones:", dim(img_final)[1], "x", dim(img_final)[2]))
 }
+```
+
+```{r}
+img_jpg <- load.image("fotos_clean/clean_cielo_dia_luna.jpg")
+img_jpg2 <- load.image("fotos_clean/clean_cielo_dia_nubes.jpg")
+
+range(img_jpg)
+range(img_jpg2)
 ```
 
