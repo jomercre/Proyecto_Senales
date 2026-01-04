@@ -1,0 +1,35 @@
+---
+title: "limpiar_fotos"
+output: html_document
+---
+
+```{r}
+if(!require(imager)) install.packages("imager")
+library(imager)
+
+# Usaremos 1024x1024 como un buen balance de calidad/velocidad.
+nuevo_ancho <- 1024
+nuevo_alto <- 1024
+
+# Obtenemos la lista de archivos
+archivos <- list.files("fotos_raw/", pattern = "\\.(jpg|jpeg|png)$", full.names = TRUE, ignore.case = TRUE)
+
+# Bucle para procesar cada imagen
+for (archivo in archivos) {
+  
+  # load.image ya normaliza los valores automáticamente al rango [0,1]
+  img <- load.image(archivo)
+  
+  # Redimensionar (mismos px)
+  img_final <- resize(img, size_x = nuevo_ancho, size_y = nuevo_alto)
+  
+  # Guardar imagen procesada
+  nombre_archivo <- basename(archivo)
+  ruta_salida <- paste0("fotos_clean/", "clean_", nombre_archivo)
+  
+  save.image(img_final, ruta_salida)
+  
+  print(paste("Procesada:", nombre_archivo, "-> Dimensiones:", dim(img_final)[1], "x", dim(img_final)[2]))
+}
+```
+
