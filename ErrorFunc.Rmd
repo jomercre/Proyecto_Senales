@@ -1,0 +1,150 @@
+---
+title: "ErrorFunc"
+author: "Joan Merlos Cremades"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Importamos una imagen y le añadimos ruido.
+
+```{r}
+library(imager)
+library(waveslim)
+
+img <- load.image("example.jpg")
+
+media <- 0
+desviacion_estandar <- 0.05
+
+noise <- as.cimg(rnorm(prod(dim(img)), mean = media, sd = desviacion_estandar))
+img_noise <- img + noise
+
+par(mfrow = c(1,2))
+
+plot(img)
+plot(img_noise)
+```
+
+Creamos una funcion para eliminar los coeficientes HL, LH y HH (mode = 'all') o solo los HH (mode = 'diag').
+```{r}
+eliminate <- function(wR,wG,wB,mode) {
+  
+  if (mode == 'all') {
+    
+    for (j in 1:(length(wR)-1)) {
+    
+      wR[[j]] <- 0*wR[[j]]
+      wG[[j]] <- 0*wG[[j]]
+      wB[[j]] <- 0*wB[[j]]
+    
+    }
+  }
+  
+  else if (mode == 'diag') {
+    
+    for (j in 1:(length(wR)-1)) {
+      
+      if (j %% 3 == 0) {
+    
+        wR[[j]] <- 0*wR[[j]]
+        wG[[j]] <- 0*wG[[j]]
+        wB[[j]] <- 0*wB[[j]]
+      }
+    }
+    
+  }
+  
+  return(list(R = wR,G = wG,B = wB))
+}
+```
+
+
+
+Hacemos una función que calcule el error cuadrático medio (RMSE) de las tres bandas para cada nivel de transformada wavelet hasta un nivel máimo max_lev. Dicho error se calcula entre la imagen real sin ruido y la equivalente a quedarnos solo con los coeficientes que no han sido eliminados con la funcion eliminate.
+
+```{r}
+plot_err <- function(img,img_noise,max_lev=8,wf='la8',mode = 'all') {
+  
+  R_T <- img[,,,1]
+  G_T <- img[,,,2]
+  B_T <- img[,,,3]
+  
+  R <- img_noise[,,,1]
+  G <- img_noise[,,,2]
+  B <- img_noise[,,,3]
+  
+  err <- c()
+  
+  for (i in 1:max_lev) {
+    
+    wR <- dwt.2d(R, wf = wf, J = i)
+    wG <- dwt.2d(G, wf = wf, J = i)
+    wB <- dwt.2d(B, wf = wf, J = i)
+    
+    res <- eliminate(wR,wG,wB,mode)
+    
+    wR <- res$R
+    wG <- res$G
+    wB <- res$B
+    
+    R_rec <- idwt.2d(wR)
+    G_rec <- idwt.2d(wG)
+    B_rec <- idwt.2d(wB)
+      
+    err_R <- sum((R_T-R_rec)**2)
+    err_G <- sum((G_T-G_rec)**2)
+    err_B <- sum((B_T-B_rec)**2)
+    
+    err[i] <- (1/(3*nrow(R)*ncol(R))*(err_R+err_G+err_B))**0.5
+  }
+
+  plot(1:max_lev, err, col = 'green', 
+       xlab='Niveles de la DWT',ylab='RMSE', 
+       main=paste0('Error en función del nivel para wf = ',wf, 
+                   ' y modo = ', mode))
+}
+
+plot_err(img,img_noise,max_lev=6, wf='la8', mode='all')
+plot_err(img,img_noise,max_lev=6, wf='la8', mode='diag')
+plot_err(img,img_noise,max_lev=6, wf='d4')
+```
+
+Hacemos una función que a partir del nivel de profundidad para que el error es mínimo, opt_lev, genere la comparación entre la imagen correcta, la que contiene error y la tratada con la descomposición wavelet.
+```{r}
+plot_comp <- function(img,img_noise,opt_lev, wf='la8', mode = 'all') {
+  
+  R <- img_noise[,,,1]
+  G <- img_noise[,,,2]
+  B <- img_noise[,,,3]
+  
+  wR <- dwt.2d(R, wf = wf, J = opt_lev)
+  wG <- dwt.2d(G, wf = wf, J = opt_lev)
+  wB <- dwt.2d(B, wf = wf, J = opt_lev)
+    
+  res <- eliminate(wR,wG,wB,mode)
+    
+  wR <- res$R
+  wG <- res$G
+  wB <- res$B
+  
+  R_rec <- idwt.2d(wR)
+  G_rec <- idwt.2d(wG)
+  B_rec <- idwt.2d(wB)
+      
+  img_rec <- imappend(list(as.cimg(R_rec), as.cimg(G_rec),
+                         as.cimg(B_rec)), axis = "c")
+  
+  par(mfrow = c(2, 2), mar = c(1, 1, 1, 1))
+  plot(img, main='Original',axes=FALSE)
+  plot(img_noise, main='Con ruido',axes=FALSE)
+  plot(img_rec, main= 'DWT óptima',axes=FALSE)
+}
+
+plot_comp(img,img_noise,opt_lev=3, wf='la8', mode = 'all')
+plot_comp(img,img_noise,opt_lev=4, wf='la8', mode = 'diag')
+plot_comp(img,img_noise,opt_lev=3, wf='d4', mode = 'all')
+```
+
