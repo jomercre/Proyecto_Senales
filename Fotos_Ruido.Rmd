@@ -1,0 +1,79 @@
+---
+title: "Fotos Ruido"
+output: html_document
+date: "2026-01-07"
+---
+
+# Carga de paquetes 
+```{r}
+library(magick)
+library(imager)
+```
+
+# Configuración
+```{r}
+carpeta_origen  <- "fotos_clean"  # imágenes limpias y del mismo tamaño    
+carpeta_destino <- "fotos_ruido" # imagenes con los distintos  tipos de ruidos      
+
+# Creamos la carpeta de destino si no existe
+if (!dir.exists(carpeta_destino)) {
+  dir.create(carpeta_destino)
+}
+```
+
+# Definición de nuestra función
+```{r}
+procesar_imagen <- function(ruta_imagen) {
+  
+  # Extraemos el nombre base de cada foto
+  nombre_bruto <- tools::file_path_sans_ext(basename(ruta_imagen))
+  message(paste("Procesando:", nombre_base, "..."))
+  nombre_base <- sub("^clean_", "", nombre_bruto)
+  
+  # MAGICK (Gaussiano, Sal/Pimienta, Poisson) 
+  img_m <- image_read(ruta_imagen)
+  
+  # 1. Gaussiano
+  img_gauss <- image_noise(img_m, noisetype = "gaussian")
+  
+  # 2. Sal y Pimienta (Impulse)
+  img_sp <- image_noise(img_m, noisetype = "impulse")
+  
+  # 3. Poisson
+  img_poisson <- image_noise(img_m, noisetype = "poisson")
+  
+  
+  # IMAGER (Speckle Matemático)
+  # Convertimos de magick a imager para operar matrices
+  img_i <- magick2cimg(img_m)
+  
+  # 4. Speckle: I_final = I + (I * Ruido)
+  # sd = 0.2 es la intensidad 
+  ruido_matriz <- rnorm(length(img_i), mean = 0, sd = 0.2) 
+  img_speckle <- img_i + (img_i * ruido_matriz)
+  
+  # Corregimos valores (Clipping 0-1) para evitar errores de color
+  img_speckle <- pmax(0, pmin(1, img_speckle))
+  
+  
+  # Guardamos todo en la carpeta de destino con sufijos claros
+  image_write(img_gauss,   file.path(carpeta_destino, paste0(nombre_base, "_gauss.jpg")))
+  image_write(img_sp,      file.path(carpeta_destino, paste0(nombre_base, "_sp.jpg")))
+  image_write(img_poisson, file.path(carpeta_destino, paste0(nombre_base, "_poisson.jpg")))
+  
+  # Para imager usamos save.image
+  save.image(img_speckle,  file.path(carpeta_destino, paste0(nombre_base, "_speckle.jpg")))
+}
+```
+
+# Ejecución
+```{r}
+# Creamos una lista con las imágenes del archivo de entrada
+mis_fotos <- list.files(carpeta_origen, pattern = "\\.jpg$", full.names = TRUE, ignore.case = TRUE)
+
+# Aplicar función a cada foto
+for (foto in mis_fotos) {
+    procesar_imagen(foto)
+}
+```
+
