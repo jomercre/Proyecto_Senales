@@ -27,7 +27,6 @@ procesar_imagen <- function(ruta_imagen) {
   
   # Extraemos el nombre base de cada foto
   nombre_bruto <- tools::file_path_sans_ext(basename(ruta_imagen))
-  message(paste("Procesando:", nombre_base, "..."))
   nombre_base <- sub("^clean_", "", nombre_bruto)
   
   # MAGICK (Gaussiano, Sal/Pimienta, Poisson) 
@@ -53,7 +52,8 @@ procesar_imagen <- function(ruta_imagen) {
   img_speckle <- img_i + (img_i * ruido_matriz)
   
   # Corregimos valores (Clipping 0-1) para evitar errores de color
-  img_speckle <- pmax(0, pmin(1, img_speckle))
+  img_speckle[img_speckle > 1] <- 1
+  img_speckle[img_speckle < 0] <- 0
   
   
   # Guardamos todo en la carpeta de destino con sufijos claros
