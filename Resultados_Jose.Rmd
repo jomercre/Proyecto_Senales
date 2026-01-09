@@ -232,89 +232,99 @@ Como el informe normalmente no necesita 32×(varias figuras), este chunk elige:
   4) `plot_comp(... opt_lev_diag, mode="diag")`
 
 ```{r}
-
-dir_out <- "fotos_informe"
+dir_out <- "resultados jose"
 if (!dir.exists(dir_out)) dir.create(dir_out)
 
-# Elegimos una imagen base representativa ---> luego lo cambio para que lo haga con todas las imagenes en lugar de solo con una 
-base_ej <- unique(results$base)[2]
+# En lugar de una sola base, iteramos por todas
+bases <- unique(results$base)
 
-for (nz in c("gauss","sp","poisson","speckle")) {
-  f_clean <- file.path(carpeta_clean, paste0("clean_", base_ej, ".jpg"))
-  f_noisy <- file.path(carpeta_ruido, paste0(base_ej, "_", nz, ".jpg"))
-  if (!file.exists(f_clean) || !file.exists(f_noisy)) next
-  
-  img <- to_rgb(load.image(f_clean))
-  img_noise <- to_rgb(load.image(f_noisy))
-  
-  # Recuperar óptimos precalculados
-  opt_all  <- results$opt_all [results$base==base_ej & results$noise==nz][1]
-  opt_diag <- results$opt_diag[results$base==base_ej & results$noise==nz][1]
-  
-  oldpar <- par(no.readonly = TRUE)
-  on.exit(par(oldpar), add = TRUE)
+for (base_ej in bases) {
 
-  # 1) Curva RMSE (all) - plot separado + ruido
-  #jpg
-  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_all.jpg")), 
-       width=8, height=5, units="in", res=300)
+  for (nz in c("gauss","sp","poisson","speckle")) {
+    f_clean <- file.path(carpeta_clean, paste0("clean_", base_ej, ".jpg"))
+    f_noisy <- file.path(carpeta_ruido, paste0(base_ej, "_", nz, ".jpg"))
+    if (!file.exists(f_clean) || !file.exists(f_noisy)) next
+
+    img <- to_rgb(load.image(f_clean))
+    img_noise <- to_rgb(load.image(f_noisy))
+
+    # Recuperar óptimos precalculados
+    opt_all  <- results$opt_all [results$base==base_ej & results$noise==nz][1]
+    opt_diag <- results$opt_diag[results$base==base_ej & results$noise==nz][1]
+
+    oldpar <- par(no.readonly = TRUE)
+    on.exit(par(oldpar), add = TRUE)
+
+    # 1) Curva RMSE (all) - plot separado + ruido
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_all.jpg")),
+         width=8, height=5, units="in", res=300)
+      par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+      plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all"),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
     par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
     plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
-    mtext(paste0("Ruido: ", nz, " | Modo: all"), outer = TRUE, cex = 1)
-  dev.off()
-  
-  #rmd
-  par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
-  plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
-  mtext(paste0("Ruido: ", nz, " | Modo: all"), outer = TRUE, cex = 1)
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all"),
+          outer = TRUE, cex = 1)
 
- 
-  # 2) Curva RMSE (diag) - plot separado + ruido
-  #jpg
-  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_diag.jpg")), 
-       width=8, height=5, units="in", res=300)
+
+    # 2) Curva RMSE (diag) - plot separado + ruido
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_diag.jpg")),
+         width=8, height=5, units="in", res=300)
+      par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+      plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag"),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
     par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
     plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
-    mtext(paste0("Ruido: ", nz, " | Modo: diag"), outer = TRUE, cex = 1)
-  dev.off()
-  
-  #rmd
-  par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
-  plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
-  mtext(paste0("Ruido: ", nz, " | Modo: diag"), outer = TRUE, cex = 1)
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag"),
+          outer = TRUE, cex = 1)
 
- 
-  # 3) Comparación (all) - plot separado + ruido y modo
-  par(oldpar)
-  #jpg
-  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_all.jpg")), 
-       width=8, height=6, units="in", res=300)
-    par(oma = c(0,0,2,0)) 
+
+    # 3) Comparación (all) - plot separado + ruido y modo
+    par(oldpar)
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_all.jpg")),
+         width=8, height=6, units="in", res=300)
+      par(oma = c(0,0,2,0))
+      plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
+    par(oma = c(0,0,2,0))
     plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
-    mtext(paste0("Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all), outer = TRUE, cex = 1)
-  dev.off()
-  
-  #rmd
-  par(oma = c(0,0,2,0)) 
-  plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
-  mtext(paste0("Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
-        outer = TRUE, cex = 1)
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
+          outer = TRUE, cex = 1)
 
-  # 4) Comparación (diag) - plot separado + ruido y modo
-  par(oldpar)
-  #jpg
-  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_diag.jpg")), 
-       width=8, height=6, units="in", res=300)
+
+    # 4) Comparación (diag) - plot separado + ruido y modo
+    par(oldpar)
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_diag.jpg")),
+         width=8, height=6, units="in", res=300)
+      par(oma = c(0,0,2,0))
+      plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
     par(oma = c(0,0,2,0))
     plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
-    mtext(paste0("Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag), outer = TRUE, cex = 1)
-  dev.off()
-  
-  #rmd
-  par(oma = c(0,0,2,0))
-  plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
-  mtext(paste0("Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
-        outer = TRUE, cex = 1)
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
+          outer = TRUE, cex = 1)
+  }
+
 }
 
 ```
