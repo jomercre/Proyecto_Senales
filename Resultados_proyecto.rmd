@@ -89,7 +89,7 @@ plot_err <- function(img,img_noise,max_lev=8,wf='la8',mode = 'all') {
     err[i] <- (1/(3*nrow(R)*ncol(R))*(err_R+err_G+err_B))**0.5
   }
 
-  plot(1:max_lev, err, col = 'green', 
+  plot(1:max_lev, err, col = 'red', 
        xlab='Niveles de la DWT',ylab='RMSE', 
        main=paste0('Error en función del nivel para wf = ',wf, 
                    ' y modo = ', mode))
@@ -222,7 +222,7 @@ results
 
 ---
 
-## 3) Figuras: aplicar `plot_err` y `plot_comp` (1 ejemplo por ruido)
+## 3) Figuras: aplicar `plot_err` y `plot_comp` (1 ejemplo por ruido) + Guardado de los outputs
 
 Como el informe normalmente no necesita 32×(varias figuras), este chunk elige:
 - una `base_ej` (la primera que exista)
@@ -233,6 +233,10 @@ Como el informe normalmente no necesita 32×(varias figuras), este chunk elige:
   4) `plot_comp(... opt_lev_diag, mode="diag")`
 
 ```{r}
+
+dir_out <- "fotos_informe"
+if (!dir.exists(dir_out)) dir.create(dir_out)
+
 # Elegimos una imagen base representativa ---> luego lo cambio para que lo haga con todas las imagenes en lugar de solo con una 
 base_ej <- unique(results$base)[2]
 
@@ -252,12 +256,30 @@ for (nz in c("gauss","sp","poisson","speckle")) {
   on.exit(par(oldpar), add = TRUE)
 
   # 1) Curva RMSE (all) - plot separado + ruido
+  #jpg
+  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_all.jpg")), 
+       width=8, height=5, units="in", res=300)
+    par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+    plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
+    mtext(paste0("Ruido: ", nz, " | Modo: all"), outer = TRUE, cex = 1)
+  dev.off()
+  
+  #rmd
   par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
   plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
   mtext(paste0("Ruido: ", nz, " | Modo: all"), outer = TRUE, cex = 1)
 
  
   # 2) Curva RMSE (diag) - plot separado + ruido
+  #jpg
+  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_diag.jpg")), 
+       width=8, height=5, units="in", res=300)
+    par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+    plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
+    mtext(paste0("Ruido: ", nz, " | Modo: diag"), outer = TRUE, cex = 1)
+  dev.off()
+  
+  #rmd
   par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
   plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
   mtext(paste0("Ruido: ", nz, " | Modo: diag"), outer = TRUE, cex = 1)
@@ -265,6 +287,15 @@ for (nz in c("gauss","sp","poisson","speckle")) {
  
   # 3) Comparación (all) - plot separado + ruido y modo
   par(oldpar)
+  #jpg
+  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_all.jpg")), 
+       width=8, height=6, units="in", res=300)
+    par(oma = c(0,0,2,0)) 
+    plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
+    mtext(paste0("Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all), outer = TRUE, cex = 1)
+  dev.off()
+  
+  #rmd
   par(oma = c(0,0,2,0)) 
   plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
   mtext(paste0("Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
@@ -272,6 +303,15 @@ for (nz in c("gauss","sp","poisson","speckle")) {
 
   # 4) Comparación (diag) - plot separado + ruido y modo
   par(oldpar)
+  #jpg
+  jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_diag.jpg")), 
+       width=8, height=6, units="in", res=300)
+    par(oma = c(0,0,2,0))
+    plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
+    mtext(paste0("Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag), outer = TRUE, cex = 1)
+  dev.off()
+  
+  #rmd
   par(oma = c(0,0,2,0))
   plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
   mtext(paste0("Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
@@ -279,4 +319,39 @@ for (nz in c("gauss","sp","poisson","speckle")) {
 }
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

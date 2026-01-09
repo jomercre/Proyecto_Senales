@@ -1,0 +1,358 @@
+---
+title: "Eliminación de ruido en imágenes mediante transformada wavelet (DWT) sobre imágenes sintéticas"
+subtitle: "Análisis de señales"
+author:
+  - "**Pol Reig Gómez** – **Pablo Carbonell Martínez** – **Joan Merlos Cremades**"
+  - "**Héctor Torres Muñoz** – **Jóse Aguilar Milla**"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: false
+    number_sections: false
+    extra_dependencies: ["float"]
+header-includes:
+  - \setlength{\intextsep}{10pt} 
+  - \setlength{\textfloatsep}{10pt}
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1. Resumen
+
+En este proyecto se ha abordado la eliminación de ruido de imágenes mediante el uso de técnicas basadas en la Transformada Wavelet Discreta (DWT). Se parte de un conjunto de fotos propias, a partir de ellas se construyen imágenes sintéticas contaminadas con distintos tipos de ruido: "guassiano", "speckle", "poisson" y "sal y pimienta". El objetivo de ello es evaluar como funciona el filtrado wavelet en condiciones controladas. La metodología consiste en descomponer cada canal RGB mediante DWT, eliminar los coeficientes de detalle usando los modos _"all"_ y _"diag"_, y finalmente reconstruir la imagen mediante la transformada inversa (iDWT). Para seleccionar el nivel de descomposición más óptimo se calcula el error cuadrático medio (RMSE) de reconstrucción respecto a la foto original para niveles crecientes de la DWT, donde se elige el nivel que minimiza al máximo dicho error. Los resultados se presentan empleando curvas de RMSE-nivel y comparativas visuales para cada tipo de los ruidos mencionados anteriormente.
+
+# 2. Objetivo y alcance
+
+## 2.1. Objetivo
+
+El objetivo es evaluar la eficacia de la eliminación del ruido mediante uso de la DWT usando imagenes sintéticas generadas a partir de fotografías propias contaminadas con ruido. Se pretende:
+
++ Comparar el impacto de las estrategias de eliminación de coeficientes _"all"_ (eliminación de los coeficientes de detalle (HL, LH y HH).) y _"diag"_ (eliminación únicamente de los coeficientes diagonales (HH).)
+
++ Estudiar y comparar el comportamiento del método frente a los ruidos considerados: gaussiano, speckle, Poisson y sal y pimienta.
+
+## 2.2. Alcance
+
+Se ha realizado el proyecto con las siguiente condiciones:
+
++ Datos de entrada: 8 fotos propias, preprocesadas y normalizadas en rangon [0,1].
+
++ Generación de ruido sintético con métodos: "gaussiano", "speckle", "poisson" y "sal y pimienta".
+
++ Wavelet y niveles: se utiliza la wavelet la8 y se evalúan niveles de descomposición hasta un máximo fijado en el experimento (max_lev), seleccionando el nivel óptimo mediante el mínimo RMSE.
+
++ Criterio de evaluación: el rendimiento se cuantifica mediante el RMSE entre la imagen original limpia y la imagen reconstruida tras el filtrado wavelet.
+
+# 3. Datos y preprocesado
+
+El conjunto de datos usado son 8 fotos propias, usadas como imágenes de partida limpias a partir de las cuales añadiremos el ruido en versiones sintéticas. Estas imágenes constituyen la referencia frente a la que se evalúa el error.
+
+# 3.1. Flujo de preprocesado
+
+Primero las imágenes se someten a un preprocesamiento (implementado en _limpiar_fotos.Rmd_) donde se ajustan las imágenes a un formato común y se normalizan las intensidades al rango [0,1], para tener una misma estructura de canales y una escala común respectivamente. Al trabajar con imágenes en escala común las medidas de RMSE pueden compararse entre fotos y tipos de ruido, y la normalización evita que valores de intensidad fuera del rango marcado condicionen la DWT o la reconstrucción de las fotos. Finalmente se almacenan las imagenes preprocesadas en un directorio de salida (fotos_clean/) siguiendo una convención de nombres consistente (clean_<nombre>.jpg), que posteriormente facilita el emparejado con sus versiones ruidosas.
+
+```{r fig-mosaico-clean, echo=FALSE, fig.show="hold", out.width="24%", fig.cap="Imágenes limpias.", fig.align="center"}
+knitr::include_graphics(c(
+  "fotos_clean/clean_cielo_dia_nubes.jpg",
+  "fotos_clean/clean_cielo_dia_luna.jpg",
+  "fotos_clean/clean_cielo_noche_arboles.jpg",
+  "fotos_clean/clean_cielo_noche.jpg"
+))
+```
+
+# 4. Generación de imágenes sintéticas con ruido
+
+Usamos las fotos preprocesadas para generar las versiones sintéticas (implementado en _Fotos_Ruido.Rmd_) aplicando cuatro transformaciones distintas, una por cada tipo de ruido. 
+
+Para gaussiano, Poisson y sal y pimienta, se utiliza _magick::image_noise()_ (implementación de ImageMagick) con los modos:
+noisetype = "gaussian", noisetype = "poisson", noisetype = "impulse" (equivalente a sal y pimienta). Para speckle, se implementa un modelo multiplicativo directamente sobre la matriz de la imagen, con la forma: $$
+I_{\text{speckle}} = I + I \cdot n, \quad n \sim \mathcal{N}(0, \sigma^2)
+$$ y se aplica clipping para mantener los valores en [0,1].
+
+Para facilitar el procesamiento en batch y el emparejado automático clean/noisy, cada archivo generado sigue la convención: `'base'_gauss.jpg`, `'base'_speckle.jpg`, `'base'_poisson.jpg`, `'base'_sp.jpg` (sal y pimienta) donde `'base'` es el identificador de la imagen original (sin extensión). Esta convención es clave porque permite, a partir del nombre del archivo, recuperar qué imagen limpia corresponde (`clean_'base'.jpg`), y qué tipo de ruido se aplicó.
+
+## 4.1. Ruidos empleados
+
++ Ruido Gaussiano (aditivo): se modela como una perturbación aleatoria independiente que se suma a la intensidad de cada pixel. Se ve como un grano fino distribuido homogéneamente por la imagen.
+
++ Ruido Speckle (multiplicativo): su amplitud depende de la intensidad de cada zona, es decir, zonas brillantes tienden a verse más afectadas. Se observa como un granulado.
+
++ Ruido Poisson (dependiente de señal): la variabilidad del ruido crece con el nivel de la señal por lo que no es estacionario respecto a la intensidad de cada zona.
+
++ Sal y pimienta (impulsivo): altera un subconjunto de píxeles y los sustituye por valores extremos cercanos a 0 o a 1. Esto genera puntos blancos o negros aislados y muy visibles.
+
+```{r fig-ruidos-ejemplo,fig.width=12, fig.height=6,fig.cap="Imagen limpia e imágenes con ruido",fig.align="center",out.width="100%",echo=FALSE,message=FALSE,warning=FALSE}
+      
+library(imager)
+
+# Carpetas
+carpeta_clean <- "fotos_clean"
+carpeta_ruido <- "fotos_ruido"
+
+# Imagen limpia
+f_clean <- list.files(
+  carpeta_clean,
+  pattern="^clean_.*\\.jpg$",
+  full.names=TRUE,
+  ignore.case=TRUE
+)[2]
+
+base <- sub("^clean_", "", tools::file_path_sans_ext(basename(f_clean)))
+
+# Rutas con ruido
+f_gauss   <- file.path(carpeta_ruido, paste0(base, "_gauss.jpg"))
+f_speckle <- file.path(carpeta_ruido, paste0(base, "_speckle.jpg"))
+f_poisson <- file.path(carpeta_ruido, paste0(base, "_poisson.jpg"))
+f_sp      <- file.path(carpeta_ruido, paste0(base, "_sp.jpg"))
+
+# Cargar imágenes
+img_clean   <- load.image(f_clean)
+img_gauss   <- load.image(f_gauss)
+img_speckle <- load.image(f_speckle)
+img_poisson <- load.image(f_poisson)
+img_sp      <- load.image(f_sp)
+
+# Layout
+layout(matrix(
+  c(1,1,1,1,
+    2,3,4,5),
+  nrow = 2,
+  byrow = TRUE
+))
+
+par(mar = c(1,1,2,1))
+
+plot(img_clean, main="Clean", axes=FALSE)
+
+plot(img_gauss,   main="Gauss", axes=FALSE)
+plot(img_speckle, main="Speckle", axes=FALSE)
+plot(img_poisson, main="Poisson", axes=FALSE)
+plot(img_sp,      main="Sal y pimienta", axes=FALSE)
+```
+
+# 5. Metodología de denoising wavelet
+
+La estrategia se basa en aplicar una transformada wavelet discreta (DWT) a cada canal de color, modificar los coeficientes asociados a altas frecuencias y reconstruir la imagen mediante la transformada inversa, seleccionando automáticamente el nivel de descomposición que minimiza el error de reconstrucción.
+
+## 5.1. Transformada Wavelet y Sub-bandas
+
+Ya que las imágenes se manejan en formato RGB el procesamiento se realiza por canal. Primero se separan los canales R, G y B y lueg se aplica la DWT a cada canal por separado.
+
+$$
+w_R = \text{DWT}_2(R, J), \quad w_G = \text{DWT}_2(G, J), \quad w_B = \text{DWT}_2(B, J)
+$$
+
+Donde J es el nivel de descomposición.
+
+En cada nivel de descomposición se obtiene un componente de aproximación (baja frecuencia) y tres de detalle (alta frecuencia) HL, LH y HH. Aquí se encuentra información útil de la imagen y también gran parte del ruido. Por ello, una forma directa de reducir el ruido es anular o atenuar los coeficientes de detalle y reconstruir la imagen de nuevo. Con el inconveniente de que al modificar los componentes de detalle se puede ver afectada la imagen (bordes y texturas).
+
+## 5.2. Estrategias usadas: all vs diag
+
+Para comparar los dos métodos usamos la función _eliminate()_:
+
++ mode = "all": genera un filtrado agresivo donde todos los coeficientes de detalle se pasan a 0, esto por ende, reduce más el ruido pero tiene más riesgo de "sobre-suavizado" y pérdida de bordes y texturas.
+
++ mode = "diag": genera un filtrado más leve donde se eliminan sólo los coeficientes asociados al detalle diagonal (HH) en todos los niveles. Esto reduce menos el ruido en comparación con _mode = "all"_ pero preserva mejor las estructuras y detalles de la imagen.
+
+## 5.3. Selección del nivel óptimo _opt_lev_
+
+Se ha incorporado una selección automática del nivel de descomposición wavelet _J_ que optimiza la reconstrucción. Para cada par (imagen limpia e imagen con ruido) y para cada modo (all y diag) se sigue el siguiente procedimiento:
+
+1. Para cada J = 1, 2, ..., max_lev: se aplica DWT con nivel J sobre cada canal de la imagen con ruido, se eliminan coeficientes de detalle según el modo, se reconstruye mediante iDWT y se calcula el RMSE entre la imagen reconstruida y la imagen clean.
+
+2. Se obtiene la curva:
+$$
+\text{RMSE}(J), \quad J \in \{1, \dots, \text{max\_lev}\}
+$$
+
+3. Se selecciona el nivel óptimo como:
+$$
+\text{opt\_lev} = \operatorname*{argmin}_{J} \text{RMSE}(J)
+$$
+4. Por último, se genera la reconstrucción más óptima aplicando el pipeline en _J = opt_lev_ y se usa la imagen para la comparación visual.
+
+```{r, echo=FALSE, fig.align='center', fig.pos='H',fig.height=4, out.width="50%", fig.cap="Curva RMSE vs nivel con Ruido Gaussiano y metod = 'all'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_gauss_rmse_all.jpg"
+))
+```
+
+# 6. Resultados y discusión
+
+La evaluación de los resultados se realiza mediante evidencia cuantitativa (curvas rmse vs nivel) y evidencia cualitativa (comparaciones visuales de imágenes). En todos los casos se usa la wavelet _la8_ y un _max_lev_ = 6.
+
+## 6.1. Ruido Gaussiano
+\vspace{0.25cm}
+**Caracterización del ruido**
+
+El ruido gaussiano introduce perturbaciones aditivas en toda la imagen percibidas como "grano fino". Al no depender de intentsidad local, tiende a afectar tanto a zonas planas como regiones con detalles.
+
+\vspace{0.5cm}
+
+**Curvas RMSE vs nivel (all vs diag)**
+
+En la _figura 4_ se muestra las curvas RMSE en función del nivel _J_ para ambos modos. El mínimo de la curva define el nivel óptimo _opt_lev_ para cada método usado (diag/all).
+
+```{r, echo=FALSE, fig.align='center', out.width="49%" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Gaussiano y modos 'all' y 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_gauss_rmse_all.jpg",
+  "fotos_informe/cielo_dia_nubes_gauss_rmse_diag.jpg"
+))
+```
+
+Observamos que para "wf = la8", el nivel de DWT óptimo para el modo _all_ corresponde a 3, por otra parte, el nivel óptimo para el modo _diag_ es 4. Estos valores son lo que serán utilizados en para hacer la reconstrucción, ya que son los valores óptimos que minimizan el RMSE. El hecho de que _all_ tenga niveles menores se debe a que al atacar los componentes de alta frecuencia de la imagen es capaz de alcanzar RMSE menores siempre a costa de que genere un mayor suavizado en la imagen. El método _diag_ al mantener HL y LH y ser más conservador, no alcanza niveles de DWT tan bajos generalmente.
+
+\vspace{0.5cm}
+
+**Comparación visual a nivel óptimo**
+
+La _figura 5_ muestra la comparación de las fotos original, con ruido y la reconstrucción para ambos modos (all y diag). 
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Gaussiano - Modos 'all' vs 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_gauss_comp_all.jpg",
+  "fotos_informe/cielo_dia_nubes_gauss_comp_diag.jpg"
+))
+```
+
+El rendimiento relativo de los métodos _all_ y _diag_ depende del equilibrio entre reducción de rudio y preservación del detalle. Esto se evidencia en la _figura 5_ donde podemos ver que el método _all_ elimino mayor cantidad de ruido pero perdió mucho más detalle que el método diagonal, al ser este último mucho más conservador a la hora de tratar los coeficientes de la imagen en comparación con la agresividad de _all_. En general, si el objetivo es minimar el error RMSE, el método _all_ sería el más apropiado; por otra parte, si queremos priorizar detalles y bordes en la imagen, el método _diag_ ofrece una reconstrucción más suave o natural.
+
+## 6.2. Ruido Speckle
+\vspace{0.25cm}
+**Caracterización del ruido**
+
+Ruido de naturaleza multiplicativa su intensidad depende del valor local de la señal y se manifiesta como un granulado con textura común en zonas de alta intensidad, lo que hace que pueda confundirse con texturas reales de la imagen.
+
+\vspace{0.5cm}
+
+**Curvas RMSE vs nivel (all vs diag)**
+
+En la _figura 6_ se muestra las curvas RMSE en función del nivel _J_ para ambos modos. El mínimo de la curva define el nivel óptimo _opt_lev_ para cada método usado (diag/all).
+
+```{r, echo=FALSE, fig.align='center', out.width="49%" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Speckle y modos 'all' y 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_speckle_rmse_all.jpg",
+  "fotos_informe/cielo_dia_nubes_speckle_rmse_diag.jpg"
+))
+```
+
+En las gráficas de curvas de la _figura 6_ podemos observar el error en función del nivel en una wf = la8 en cada uno de los modos empleados. Igual que en la _figura 4_, observamos que para el mismo valor de RMSE, los niveles de DWT son siempre más bajos en el método _all_ que en _diag_. Siendo el nivel 4 el óptimo para _all_ y el nivel 5 el óptimo para _diag_.
+
+\vspace{0.5cm}
+
+**Comparación visual a nivel óptimo**
+
+La _figura 7_ muestra la comparación de las fotos original, con ruido y la reconstrucción para ambos modos (all y diag). 
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Speckle - Modos 'all' vs 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_speckle_comp_all.jpg",
+  "fotos_informe/cielo_dia_nubes_speckle_comp_diag.jpg"
+))
+```
+
+Se observa claramente que la reducción de ruido es notablemente mayor con el método _all_, sin embargo, la perdida de información en la imagen también es muy grande, se pierde mucha de la textura original y se degradan los bordes en gran medida. Por otro lado, el método _diag_ deja una gran cantidad de ruido residual perceptible homogéneamente por la imagen, sin reducir excesivamente el granulado.
+
+## Ruido Poisson
+\vspace{0.25cm}
+**Caracterización del ruido**
+
+Ruido asociado a procesos de conteo y dependiente de la señal, aquí la varianza del ruido aumenta según la intensidad. Esto hace que el ruido no sea uniforme y que haya más en las zonas con valores más altos o más brillantes.
+
+\vspace{0.5cm}
+
+**Curvas RMSE vs nivel (all vs diag)**
+
+En la _figura 8_ se muestra las curvas RMSE en función del nivel _J_ para ambos modos. El mínimo de la curva define el nivel óptimo _opt_lev_ para cada método usado (diag/all).
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Poisson y modos 'all' y 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_poisson_rmse_all.jpg",
+  "fotos_informe/cielo_dia_nubes_poisson_rmse_diag.jpg"
+))
+```
+
+En las gráficas de curvas de la _figura 8_ podemos observar el error en función del nivel en una wf = la8 en cada uno de los modos empleados. De nuevo para el mismo valor de RMSE, los niveles de DWT son siempre más bajos en el método _all_ que en _diag_. Siendo el nivel 4 el óptimo para _all_ y el nivel 5 el óptimo para _diag_, además es destacable que ambos tipos de ruido tienen gráficas muy similares.
+
+\vspace{0.5cm}
+
+**Comparación visual a nivel óptimo**
+
+La _figura 9_ muestra la comparación de las fotos original, con ruido y la reconstrucción para ambos modos (all y diag). 
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Poisson - Modos 'all' vs 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_poisson_comp_all.jpg",
+  "fotos_informe/cielo_dia_nubes_poisson_comp_diag.jpg"
+))
+```
+
+Son observables unos resultados muy similares a los observados con el ruido speckle en la _figura 7_. Además, se puede estimar una mejora mayor en zonas con mayor luminosidad en comparación con las zonas con menos, aunque no es demasiado perceptible. En general, el método _all_ ha realizado un suavizado excesivo donde se han perdido mucha información de bordes y texturas, en comparación el método _diag_ donde pese a que la reducción de ruido no ha sido mucha, sí que hay mejora y se siguen diferenciando bordes y estructuras de la imagen sin problemas.
+
+\vspace{2cm}
+
+## 6.4. Ruido Sal y Pimienta
+\vspace{0.25cm}
+**Caracterización del ruido**
+
+Ruido impulsivo que sustituye una sección de píxeles por valores extremos, es decir, 0 o 1. Esto genera puntos blancos y negros en la imagen que suelen ser dificiles de eliminar.
+
+\vspace{0.5cm}
+
+**Curvas RMSE vs nivel (all vs diag)**
+
+En la _figura 10_ se muestra las curvas RMSE en función del nivel _J_ para ambos modos. El mínimo de la curva define el nivel óptimo _opt_lev_ para cada método usado (diag/all).
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Sal y Pimienta y modos 'all' y 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_sp_rmse_all.jpg",
+  "fotos_informe/cielo_dia_nubes_sp_rmse_diag.jpg"
+))
+```
+
+En las gráficas de curvas de la _figura 10_ podemos observar el error en función del nivel en una wf = la8 en cada uno de los modos empleados. Para el mismo valor de RMSE, los niveles de DWT son siempre más bajos en el método _all_ que en _diag_. Siendo el nivel 4 el óptimo para _all_ y el nivel 5 el óptimo para _diag_. De nuevo, gráfica muy similar a los últimos dos métodos.
+
+\vspace{0.5cm}
+
+**Comparación visual a nivel óptimo**
+
+La _figura 11_ muestra la comparación de las fotos original, con ruido y la reconstrucción para ambos modos (all y diag). 
+
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Sal y Pimienta - Modos 'all' vs 'diag'"}
+knitr::include_graphics(c(
+  "fotos_informe/cielo_dia_nubes_sp_comp_all.jpg",
+  "fotos_informe/cielo_dia_nubes_sp_comp_diag.jpg"
+))
+```
+
+\vspace{1cm}
+
+El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables para su eliminación directa y esto se evidencia en la reconstrucción de las imágenes. Ambos métodos son capaces de reducir el ruido, siendo el método _all_ el que más lo reduce pero de forma similar a la _figura 9_, se pierde mucha información y texturas, destacando algunos detalles o nubes finas que desaparecen completamente, por ello, se considera que en este caso _all_ genera un suavizado excesivo. Por otra parte, _diag_ lleva a cabo una mejora de las condiciones de ruido pese a que esta mejora sea leve, mantiene una buena cantidad de detalle y texturas. No obstante, se siguen observando artefactos causados por el ruido y podría llegar a considerarse como un resultado insuficiente.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
