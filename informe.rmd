@@ -1,36 +1,28 @@
 ---
-title: "Eliminación de ruido en imágenes mediante transformada wavelet (DWT) sobre imágenes sintéticas"
-subtitle: "Análisis de señales"
+title: Eliminación de ruido en imágenes mediante transformada wavelet (DWT) sobre
+  imágenes sintéticas
 author:
-  - "**Pol Reig Gómez** – **Pablo Carbonell Martínez** – **Joan Merlos Cremades**"
-  - "**Héctor Torres Muñoz** – **Jóse Aguilar Milla**"
+- '**Pol Reig Gómez** – **Pablo Carbonell Martínez** – **Joan Merlos Cremades**'
+- '**Héctor Torres Muñoz** – **Jóse Aguilar Milla**'
 date: "`r Sys.Date()`"
 output:
   pdf_document:
     toc: false
     number_sections: false
-    extra_dependencies: ["float"]
+    extra_dependencies: float
+  html_document:
+    toc: false
+    df_print: paged
+subtitle: Análisis de señales
 header-includes:
-  - \setlength{\intextsep}{10pt} 
-  - \setlength{\textfloatsep}{10pt}
+- \setlength{\intextsep}{10pt}
+- \setlength{\textfloatsep}{10pt}
 ---
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # 1. Resumen
 
-En este proyecto se ha abordado la eliminación de ruido de imágenes mediante el uso de técnicas basadas en la Transformada Wavelet Discreta (DWT). Se parte de un conjunto de fotos propias, a partir de ellas se construyen imágenes sintéticas contaminadas con distintos tipos de ruido: "guassiano", "speckle", "poisson" y "sal y pimienta". El objetivo de ello es evaluar como funciona el filtrado wavelet en condiciones controladas. La metodología consiste en descomponer cada canal RGB mediante DWT, eliminar los coeficientes de detalle usando los modos _"all"_ y _"diag"_, y finalmente reconstruir la imagen mediante la transformada inversa (iDWT). Para seleccionar el nivel de descomposición más óptimo se calcula el error cuadrático medio (RMSE) de reconstrucción respecto a la foto original para niveles crecientes de la DWT, donde se elige el nivel que minimiza al máximo dicho error. Los resultados se presentan empleando curvas de RMSE-nivel y comparativas visuales para cada tipo de los ruidos mencionados anteriormente.
+En este proyecto se ha abordado la eliminación de ruido de imágenes mediante el uso de técnicas basadas en la Transformada Wavelet Discreta (DWT). Se parte de un conjunto de fotos propias, a partir de ellas se construyen imágenes sintéticas contaminadas con distintos tipos de ruido: "guassiano", "speckle", "poisson" y "sal y pimienta". El objetivo de ello es evaluar como funciona el filtrado wavelet en condiciones controladas. La metodología consiste en descomponer cada canal RGB mediante la transformada wavelet discreta o DWT, luego eliminar los coeficientes de detalle usando los modos _"all"_ y _"diag"_, y finalmente reconstruir la imagen mediante la transformada inversa (iDWT). Para seleccionar el nivel de descomposición más óptimo se calcula el error cuadrático medio (RMSE) de reconstrucción respecto a la foto original para niveles crecientes de la DWT, donde se elige el nivel que minimiza al máximo dicho error. Los resultados se presentan empleando curvas de RMSE-nivel y comparativas visuales para cada tipo de los ruidos mencionados anteriormente.
 
 # 2. Objetivo y alcance
 
@@ -67,7 +59,11 @@ knitr::include_graphics(c(
   "fotos_clean/clean_cielo_dia_nubes.jpg",
   "fotos_clean/clean_cielo_dia_luna.jpg",
   "fotos_clean/clean_cielo_noche_arboles.jpg",
-  "fotos_clean/clean_cielo_noche.jpg"
+  "fotos_clean/clean_cielo_noche.jpg",
+  "fotos_clean/clean_objeto_gafas.jpg",
+  "fotos_clean/clean_objeto_vaca.jpg",
+  "fotos_clean/clean_objetos_juguetes.jpg",
+  "fotos_clean/clean_objetos_mesa.jpg"
 ))
 ```
 
@@ -147,7 +143,7 @@ La estrategia se basa en aplicar una transformada wavelet discreta (DWT) a cada 
 
 ## 5.1. Transformada Wavelet y Sub-bandas
 
-Ya que las imágenes se manejan en formato RGB el procesamiento se realiza por canal. Primero se separan los canales R, G y B y lueg se aplica la DWT a cada canal por separado.
+Ya que las imágenes se manejan en formato RGB el procesamiento se realiza por canal. Primero se separan los canales R, G y B y luego se aplica la DWT a cada canal por separado.
 
 $$
 w_R = \text{DWT}_2(R, J), \quad w_G = \text{DWT}_2(G, J), \quad w_B = \text{DWT}_2(B, J)
@@ -155,7 +151,17 @@ $$
 
 Donde J es el nivel de descomposición.
 
-En cada nivel de descomposición se obtiene un componente de aproximación (baja frecuencia) y tres de detalle (alta frecuencia) HL, LH y HH. Aquí se encuentra información útil de la imagen y también gran parte del ruido. Por ello, una forma directa de reducir el ruido es anular o atenuar los coeficientes de detalle y reconstruir la imagen de nuevo. Con el inconveniente de que al modificar los componentes de detalle se puede ver afectada la imagen (bordes y texturas).
+En cada nivel de descomposición se obtiene un componente de aproximación (baja frecuencia) LL y tres de detalle (alta frecuencia) HL, LH y HH, a diferencia de en una dimensión donde solo se obtenía un coeficiente de aproximación y uno de detalle. Esta diferencia reside en que en dos dimensiones podemos aplicar un filtro distinto en cada dirección del espacio, lo que nos da lugar a las siguientes combinaciones:
+
++ Filtro paso bajo en las columnas y filtro paso bajo en las filas $\Longrightarrow$ LL
+
++ Filtro paso bajo en la dirección de las filas y paso alto en las columnas $\Longrightarrow$ LH
+
++ Filtro paso alto en la dirección de las filas y paso bajo en las columnas $\Longrightarrow$ HL
+
++ Filtro paso alto en la dirección de las filas y paso alto en las columnas $\Longrightarrow$ HH
+
+Por ello, una forma directa de reducir el ruido es anular o atenuar los coeficientes de detalle y reconstruir la imagen de nuevo. Con el inconveniente de que al modificar los componentes de detalle se puede ver afectada la imagen (bordes y texturas).
 
 ## 5.2. Estrategias usadas: all vs diag
 
@@ -188,7 +194,7 @@ knitr::include_graphics(c(
 ))
 ```
 
-# 6. Resultados y discusión
+# 6. Resultados para una única imagen
 
 La evaluación de los resultados se realiza mediante evidencia cuantitativa (curvas rmse vs nivel) y evidencia cualitativa (comparaciones visuales de imágenes). En todos los casos se usa la wavelet _la8_ y un _max_lev_ = 6.
 
@@ -264,7 +270,7 @@ knitr::include_graphics(c(
 
 Se observa claramente que la reducción de ruido es notablemente mayor con el método _all_, sin embargo, la perdida de información en la imagen también es muy grande, se pierde mucha de la textura original y se degradan los bordes en gran medida. Por otro lado, el método _diag_ deja una gran cantidad de ruido residual perceptible homogéneamente por la imagen, sin reducir excesivamente el granulado.
 
-## Ruido Poisson
+## 6.3. Ruido Poisson
 \vspace{0.25cm}
 **Caracterización del ruido**
 
@@ -341,7 +347,11 @@ knitr::include_graphics(c(
 El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables para su eliminación directa y esto se evidencia en la reconstrucción de las imágenes. Ambos métodos son capaces de reducir el ruido, siendo el método _all_ el que más lo reduce pero de forma similar a la _figura 9_, se pierde mucha información y texturas, destacando algunos detalles o nubes finas que desaparecen completamente, por ello, se considera que en este caso _all_ genera un suavizado excesivo. Por otra parte, _diag_ lleva a cabo una mejora de las condiciones de ruido pese a que esta mejora sea leve, mantiene una buena cantidad de detalle y texturas. No obstante, se siguen observando artefactos causados por el ruido y podría llegar a considerarse como un resultado insuficiente.
 
 
+## 7. Resultados comparativos
 
+En este apartado, vamos a observar los casos más destacables que se han obtenido a partir de la recomposición de las 8 imágenes con el fin de obtener conclusiones generalizables.
+
+## 7.1. Error gaussiano
 
 
 
