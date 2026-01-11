@@ -1,7 +1,6 @@
 ---
-title: "Fotos Ruido"
+title: "Fotos_Ruido"
 output: html_document
-date: "2026-01-07"
 ---
 
 # Carga de paquetes 
@@ -57,19 +56,24 @@ procesar_imagen <- function(ruta_imagen) {
   
   
   # Guardamos todo en la carpeta de destino con sufijos claros
-  image_write(img_gauss,   file.path(carpeta_destino, paste0(nombre_base, "_gauss.jpg")))
-  image_write(img_sp,      file.path(carpeta_destino, paste0(nombre_base, "_sp.jpg")))
-  image_write(img_poisson, file.path(carpeta_destino, paste0(nombre_base, "_poisson.jpg")))
+  image_write(img_gauss,   file.path(carpeta_destino, 
+                                     paste0(nombre_base, "_gauss.jpg")))
+  image_write(img_sp,      file.path(carpeta_destino, 
+                                     paste0(nombre_base, "_sp.jpg")))
+  image_write(img_poisson, file.path(carpeta_destino, 
+                                     paste0(nombre_base, "_poisson.jpg")))
   
   # Para imager usamos save.image
-  save.image(img_speckle,  file.path(carpeta_destino, paste0(nombre_base, "_speckle.jpg")))
+  save.image(img_speckle,  file.path(carpeta_destino, 
+                                     paste0(nombre_base, "_speckle.jpg")))
 }
 ```
 
 # Ejecución
 ```{r}
 # Creamos una lista con las imágenes del archivo de entrada
-mis_fotos <- list.files(carpeta_origen, pattern = "\\.jpg$", full.names = TRUE, ignore.case = TRUE)
+mis_fotos <- list.files(carpeta_origen, pattern = "\\.jpg$", full.names = TRUE,
+                        ignore.case = TRUE)
 
 # Aplicar función a cada foto
 for (foto in mis_fotos) {
