@@ -399,4 +399,4 @@ knitr::include_graphics(c(
 
 Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda.
 
-
+ 
