@@ -351,9 +351,40 @@ El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables par
 
 En este apartado, vamos a observar los casos más destacables que se han obtenido a partir de la recomposición de las 8 imágenes con el fin de obtener conclusiones generalizables.
 
-## 7.1. Error gaussiano
+## 7.1. Diferencia entre tipos de error
+
+A continuación vamos a comparar cómo afectan los diferentes tipos de ruido a la efectividad de la DWT a la hora de reconstruir las imagenes eliminando dicho ruido. Para ello hemos empleado una imagen aleatoria y le hemos aplicado  los diferentes tipos de ruido para luego reconstruirla en cada caso. 
+
+La Transformada Wavelet (DWT) demuestra su mayor eficacia frente al ruido Gaussiano, logrando separar y eliminar el ruido aleatorio de manera óptima. Sin embargo, su rendimiento decae con ruidos dependientes de la señal (Speckle o Poisson), donde la limpieza es irregular según el brillo de la zona. El peor escenario es el ruido impulsivo (Sal y Pimienta), en el cual llega a empeorar la calidad de la imagen respecto a la imagen con ruido.
+
+```{r, echo=FALSE, fig.align='center', out.width="40%", fig.pos='H' , fig.show='hold',fig.ncol=2}
+knitr::include_graphics(c(
+  "resultados jose/objeto_vaca_gauss_comp_all.jpg",
+  "resultados jose/objeto_vaca_poisson_comp_all.jpg",
+  "resultados jose/objeto_vaca_sp_comp_all.jpg",
+  "resultados jose/objeto_vaca_speckle_comp_all.jpg"
+))
+```
+
+*Añadir aquí la tabla de los errores de esta imagen en estos 4 casos concretos unicamente*
 
 
+## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de SyP 
+
+Un caso en el que el ruido SyP es especialmente molesto es en las imágenes del cielo nocturno ya que para el ordenador, una estrella y un punto de ruido son gemelos. Ambos son simples puntitos blancos sobre un fondo negro. Tienen la misma forma y tamaño.
+
+En estos casos, funciona mejor la estrategia "diag" que "all" debido a que, la estrategia "All"  intenta limpiar todos los detalles finos de la imagen, el ordenador se confunde y elimina demasiado, borrando los puntos de ruido, pero también las estrellas porque las interpreta como ruido. Al final, te queda una mancha borrosa sin estrellas.
+Sin embargo, la estrategia "Diag"es más suave (o menos estricta). Solo limpia el ruido en una dirección específica y deja lo demás. Al limpiar menos, las estrellas se salvan de ser borradas. Visualmente gana esta opción porque preferimos ver un cielo con estrellas (aunque tenga un poco de ruido) que no lograr ver prácticamente nada porque hemos perdido demasiada información relevante.
+
+A continuación analizaremos la reconstruccion de las 
+```{r, echo=FALSE, out.width="45%", fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/cielo_noche_arboles_sp_comp_all.jpg",
+  "resultados jose/cielo_noche_arboles_sp_comp_diag.jpg",
+  "resultados jose/cielo_noche_sp_comp_all.jpg",
+  "resultados jose/cielo_noche_sp_comp_diag.jpg"
+))
+```
 
 
 
