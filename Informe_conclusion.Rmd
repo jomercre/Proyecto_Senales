@@ -370,8 +370,7 @@ knitr::include_graphics(
   "resultados jose/tabla_bonita_vaca.png",
 )
 ```
-
-
+En la tabla anterior, se puede observar como el mayor error en el proceso de eliminación de ruido se genera con los ruidos SyP y Poisson.
 
 
 ## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de SyP 
@@ -380,8 +379,7 @@ Un caso en el que el ruido SyP es especialmente molesto es en las imágenes del 
 
 En estos casos, funciona mejor la estrategia "diag" que "all" debido a que, la estrategia "All"  intenta limpiar todos los detalles finos de la imagen, el ordenador se confunde y elimina demasiado, borrando los puntos de ruido, pero también las estrellas porque las interpreta como ruido. Al final, te queda una mancha borrosa sin estrellas.
 Sin embargo, la estrategia "Diag"es más suave (o menos estricta). Solo limpia el ruido en una dirección específica y deja lo demás. Al limpiar menos, las estrellas se salvan de ser borradas. Visualmente gana esta opción porque preferimos ver un cielo con estrellas (aunque tenga un poco de ruido) que no lograr ver prácticamente nada porque hemos perdido demasiada información relevante.
-
-A continuación analizaremos la reconstruccion de las 
+ 
 ```{r, echo=FALSE, out.width="45%", fig.align='center', fig.show='hold'}
 knitr::include_graphics(c(
   "resultados jose/cielo_noche_arboles_sp_comp_all.jpg",
@@ -391,10 +389,14 @@ knitr::include_graphics(c(
 ))
 ```
 
+## 7.3 Comparación errores promedio 
 
+```{r, echo=FALSE, fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/grafico_comparativa_rmse.jpg"
+))
+```
 
-
-
-
+Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda.
 
 

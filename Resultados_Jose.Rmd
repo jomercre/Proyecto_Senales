@@ -391,6 +391,98 @@ for (f in files_vaca) {
 knitr::kable(results_vaca, caption = paste("Resultados para", target_base, "con estrategia 'ALL'"))
 ```
 ```{r}
+# --- CONFIGURACIÓN ---
+# 1. Definimos las imágenes exactas que quieres comparar
+mis_imagenes <- c("cielo_noche_arboles", "cielo_noche")
+
+# 2. Definimos el ruido que buscamos (ajusta "sp" si en tus archivos se llama "s&p")
+mi_ruido <- "sp" 
+
+wf <- "la8"
+max_lev <- 6
+
+# 3. Preparamos la tabla para guardar resultados comparativos
+results_cielo <- data.frame(
+  Imagen = character(),
+  Ruido = character(),
+  RMSE_All = double(),
+  RMSE_Diag = double(),
+  Mejor_Metodo = character(), # Para ver cuál gana automáticamente
+  stringsAsFactors = FALSE
+)
+
+# Listamos todos los archivos ruidosos una vez
+all_files <- list.files(carpeta_ruido, pattern="\\.jpg$", full.names=TRUE, ignore.case=TRUE)
+
+# --- BUCLE PRINCIPAL ---
+for (base_name in mis_imagenes) {
+  
+  # A. Buscar el archivo ruidoso que coincida con el nombre y el tipo de ruido
+  # Filtramos primero por el nombre de la imagen
+  candidates <- all_files[grep(base_name, all_files)]
+  # Filtramos después por el tipo de ruido
+  f_ruido <- candidates[grep(mi_ruido, candidates)]
+  
+  # Si encuentra más de uno o ninguno, avisamos y saltamos
+  if (length(f_ruido) == 0) {
+    message(paste("⚠️ No encuentro archivo con ruido", mi_ruido, "para", base_name))
+    next
+  }
+  # Nos quedamos con el primero que coincida (por seguridad)
+  f_ruido <- f_ruido[1]
+  
+  # B. Buscar imagen limpia
+  f_clean <- file.path(carpeta_clean, paste0("clean_", base_name, ".jpg"))
+  
+  if (!file.exists(f_clean)) {
+    message(paste("⚠️ No existe la imagen limpia:", f_clean))
+    next
+  }
+  
+  # C. Cargar imágenes
+  img <- to_rgb(load.image(f_clean))
+  img_noise <- to_rgb(load.image(f_ruido))
+  
+  # D. Calcular errores para AMBOS métodos
+  # 1. Método ALL
+  err_all <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="all")
+  min_rmse_all <- min(err_all)
+  
+  # 2. Método DIAG
+  err_diag <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="diag")
+  min_rmse_diag <- min(err_diag)
+  
+  # E. Determinar ganador
+  ganador <- ifelse(min_rmse_diag < min_rmse_all, "DIAG", "ALL")
+  
+  # F. Guardar fila
+  results_cielo <- rbind(results_cielo, data.frame(
+    Imagen = base_name,
+    Ruido = mi_ruido,
+    RMSE_All = round(min_rmse_all, 4),   # Redondeamos a 4 decimales
+    RMSE_Diag = round(min_rmse_diag, 4),
+    Mejor_Metodo = ganador,
+    stringsAsFactors = FALSE
+  ))
+}
+
+# --- GUARDAR Y MOSTRAR ---
+
+# 1. Guardar como PNG GRANDE (para que se vea bien)
+library(gridExtra)
+library(grid)
+
+ruta_salida <- file.path("resultados jose", "tabla_cielo_sp.png")
+
+# Ajustamos tamaño y letra
+png(ruta_salida, width = 800, height = 300) 
+tt <- ttheme_default(base_size = 16) # Letra grande
+grid.table(results_cielo, rows = NULL, theme = tt)
+dev.off()
+
+# 2. Mostrar la tabla en pantalla (RMarkdown)
+knitr::kable(results_cielo, caption = "Comparativa Cielo Nocturno con Ruido S&P")
+
 # 1. LIMPIEZA PREVIA (Por si se quedó algo atascado)
 while (!is.null(dev.list())) dev.off()
 
@@ -420,6 +512,81 @@ dev.off()
 message(paste("✅ ¡Listo! Tabla guardada en:", ruta_archivo))
 ```
 
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# 1. PREPARACIÓN DE LOS DATOS
+# Tomamos tu tabla 'results', agrupamos por ruido y calculamos la media
+datos_grafico <- results %>%
+  group_by(noise) %>%
+  summarise(
+    # Calculamos el promedio para cada estrategia
+    All = mean(rmse_min_all, na.rm = TRUE),
+    Diag = mean(rmse_min_diag, na.rm = TRUE)
+  ) %>%
+  # Pasamos a formato largo para ggplot (creamos columnas "Estrategia" y "Error")
+  pivot_longer(
+    cols = c("All", "Diag"),
+    names_to = "Estrategia",
+    values_to = "RMSE_Promedio"
+  )
+
+# 2. CREACIÓN DEL GRÁFICO
+ggplot(datos_grafico, aes(x = noise, y = RMSE_Promedio, fill = Estrategia)) +
+  # geom_col crea las barras. position = "dodge" las pone una al lado de la otra
+  geom_col(position = "dodge", width = 0.7, color = "black") + 
+  
+  # Añadimos etiquetas de texto encima de las barras (opcional, para ver el valor exacto)
+  geom_text(aes(label = round(RMSE_Promedio, 2)), 
+            position = position_dodge(width = 0.7), 
+            vjust = -0.5, size = 3.5) +
+  
+  # Personalización de colores y estilo
+  scale_fill_manual(values = c("All" = "#4E84C4", "Diag" = "#D16103")) + # Azul y Naranja
+  theme_minimal() +
+  labs(
+    title = "Comparativa de Error Promedio (RMSE) por Tipo de Ruido",
+    subtitle = "Estrategia 'All' vs 'Diag'",
+    x = "Tipo de Ruido",
+    y = "RMSE Promedio",
+    fill = "Estrategia"
+  ) +
+  theme(
+    legend.position = "top", # Leyenda arriba
+    axis.text.x = element_text(size = 11, face = "bold"),
+    plot.title = element_text(hjust = 0.5) # Centrar título
+  )
+
+
+
+# 1. Definir dónde lo vamos a guardar
+carpeta_destino <- "resultados jose"
+nombre_archivo <- "grafico_comparativa_rmse.jpg"
+ruta_completa <- file.path(carpeta_destino, nombre_archivo)
+
+# 2. Asegurar que la carpeta existe (por si acaso)
+if (!dir.exists(carpeta_destino)) {
+  dir.create(carpeta_destino)
+}
+
+# 3. Guardar el gráfico
+# ggsave coge automáticamente el último gráfico generado por ggplot.
+# - width y height: El tamaño en pulgadas (puedes cambiarlo si lo quieres más ancho/alto).
+# - dpi = 300: "Puntos por pulgada". 300 es calidad de impresión estándar (para que no se vea borroso).
+ggsave(
+  filename = ruta_completa,
+  width = 8,       # Ancho en pulgadas
+  height = 5,      # Alto en pulgadas
+  units = "in",
+  dpi = 300        # Alta resolución
+)
+
+message(paste("✅ Gráfico guardado con éxito en:", ruta_completa))
+```
 
 
 
