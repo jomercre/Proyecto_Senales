@@ -374,6 +374,9 @@ for (f in files_vaca) {
   ))
 }
 
+archivo_salida <- file.path("resultados jose", "resultados_vaca.csv")
+    write.csv(results_vaca, archivo_salida, row.names = FALSE)
+
 knitr::kable(results_vaca, caption = paste("Resultados para", target_base, "con estrategia 'ALL'"))
 ```
 ```{r}
