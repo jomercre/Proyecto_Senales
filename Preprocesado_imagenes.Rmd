@@ -1,13 +1,12 @@
 ---
-title: "limpiar_fotos"
+title: "Preprocesado_imagenes"
 output: html_document
 ---
 
 ```{r}
-if(!require(imager)) install.packages("imager")
 library(imager)
 
-# Usaremos 1024x1024 como un buen balance de calidad/velocidad.
+# Usaremos 1024x1024 para nuestro análisis posterior
 nuevo_ancho <- 1024
 nuevo_alto <- 1024
 
@@ -32,13 +31,3 @@ for (archivo in archivos) {
   print(paste("Procesada:", nombre_archivo, "-> Dimensiones:", dim(img_final)[1], "x", dim(img_final)[2], " -> Rango: [", round(range(img_final)[1],2),",", round(range(img_final)[2],2), "]"))
 }
 ```
-
-```{r}
-# Comprobación de que las imágenes estan en la carpeta correspondiente
-img_jpg <- load.image("fotos_clean/clean_cielo_dia_luna.jpg")
-img_jpg2 <- load.image("fotos_clean/clean_cielo_dia_nubes.jpg")
-
-range(img_jpg)
-range(img_jpg2)
-```
-
