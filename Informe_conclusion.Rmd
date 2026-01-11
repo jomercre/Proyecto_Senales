@@ -6,13 +6,13 @@ author:
 - '**Héctor Torres Muñoz** – **Jóse Aguilar Milla**'
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    toc: false
-    df_print: paged
   pdf_document:
     toc: false
     number_sections: false
     extra_dependencies: float
+  html_document:
+    toc: false
+    df_print: paged
 subtitle: Análisis de señales
 header-includes:
 - \setlength{\intextsep}{10pt}
@@ -194,7 +194,7 @@ knitr::include_graphics(c(
 ))
 ```
 
-# 6. Resultados para una única imagen
+# 6. Resultados en imagen representativa
 
 La evaluación de los resultados se realiza mediante evidencia cuantitativa (curvas rmse vs nivel) y evidencia cualitativa (comparaciones visuales de imágenes). En todos los casos se usa la wavelet _la8_ y un _max_lev_ = 6.
 
@@ -246,7 +246,7 @@ Ruido de naturaleza multiplicativa su intensidad depende del valor local de la s
 
 En la _figura 6_ se muestra las curvas RMSE en función del nivel _J_ para ambos modos. El mínimo de la curva define el nivel óptimo _opt_lev_ para cada método usado (diag/all).
 
-```{r, echo=FALSE, fig.align='center', out.width="49%" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Speckle y modos 'all' y 'diag'"}
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos="H" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Speckle y modos 'all' y 'diag'"}
 knitr::include_graphics(c(
   "fotos_informe/cielo_dia_nubes_speckle_rmse_all.jpg",
   "fotos_informe/cielo_dia_nubes_speckle_rmse_diag.jpg"
@@ -269,6 +269,8 @@ knitr::include_graphics(c(
 ```
 
 Se observa claramente que la reducción de ruido es notablemente mayor con el método _all_, sin embargo, la perdida de información en la imagen también es muy grande, se pierde mucha de la textura original y se degradan los bordes en gran medida. Por otro lado, el método _diag_ deja una gran cantidad de ruido residual perceptible homogéneamente por la imagen, sin reducir excesivamente el granulado.
+
+\vspace{1cm}
 
 ## 6.3. Ruido Poisson
 \vspace{0.25cm}
@@ -297,7 +299,7 @@ En las gráficas de curvas de la _figura 8_ podemos observar el error en funció
 
 La _figura 9_ muestra la comparación de las fotos original, con ruido y la reconstrucción para ambos modos (all y diag). 
 
-```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Poisson - Modos 'all' vs 'diag'"}
+```{r, echo=FALSE, fig.align='center', out.width="47%", fig.pos='H' , fig.show='hold',fig.cap="Comparación Ruido Poisson - Modos 'all' vs 'diag'"}
 knitr::include_graphics(c(
   "fotos_informe/cielo_dia_nubes_poisson_comp_all.jpg",
   "fotos_informe/cielo_dia_nubes_poisson_comp_diag.jpg"
@@ -306,7 +308,7 @@ knitr::include_graphics(c(
 
 Son observables unos resultados muy similares a los observados con el ruido speckle en la _figura 7_. Además, se puede estimar una mejora mayor en zonas con mayor luminosidad en comparación con las zonas con menos, aunque no es demasiado perceptible. En general, el método _all_ ha realizado un suavizado excesivo donde se han perdido mucha información de bordes y texturas, en comparación el método _diag_ donde pese a que la reducción de ruido no ha sido mucha, sí que hay mejora y se siguen diferenciando bordes y estructuras de la imagen sin problemas.
 
-\vspace{2cm}
+\vspace{0.5cm}
 
 ## 6.4. Ruido Sal y Pimienta
 \vspace{0.25cm}
@@ -342,10 +344,10 @@ knitr::include_graphics(c(
 ))
 ```
 
-\vspace{1cm}
 
 El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables para su eliminación directa y esto se evidencia en la reconstrucción de las imágenes. Ambos métodos son capaces de reducir el ruido, siendo el método _all_ el que más lo reduce pero de forma similar a la _figura 9_, se pierde mucha información y texturas, destacando algunos detalles o nubes finas que desaparecen completamente, por ello, se considera que en este caso _all_ genera un suavizado excesivo. Por otra parte, _diag_ lleva a cabo una mejora de las condiciones de ruido pese a que esta mejora sea leve, mantiene una buena cantidad de detalle y texturas. No obstante, se siguen observando artefactos causados por el ruido y podría llegar a considerarse como un resultado insuficiente.
 
+\vspace{0.5cm}
 
 ## 7. Resultados comparativos
 
@@ -353,50 +355,76 @@ En este apartado, vamos a observar los casos más destacables que se han obtenid
 
 ## 7.1. Diferencia entre tipos de error
 
-A continuación vamos a comparar cómo afectan los diferentes tipos de ruido a la efectividad de la DWT a la hora de reconstruir las imagenes eliminando dicho ruido. Para ello hemos empleado una imagen aleatoria y le hemos aplicado  los diferentes tipos de ruido para luego reconstruirla en cada caso. 
+A continuación vamos a comparar cómo afectan los diferentes tipos de ruido a la efectividad de la DWT a la hora de reconstruir las imágenes eliminando dicho ruido. Para ello hemos empleado una imagen aleatoria y le hemos aplicado  los diferentes tipos de ruido para luego reconstruirla en cada caso como podemos observar en la _figura 12_. 
 
-La Transformada Wavelet (DWT) demuestra su mayor eficacia frente al ruido Gaussiano, logrando separar y eliminar el ruido aleatorio de manera óptima. Sin embargo, su rendimiento decae con ruidos dependientes de la señal (Speckle o Poisson), donde la limpieza es irregular según el brillo de la zona. El peor escenario es el ruido impulsivo (Sal y Pimienta), en el cual llega a empeorar la calidad de la imagen respecto a la imagen con ruido.
+Observando la _tabla 1_, se percibe que la Transformada Wavelet (DWT) demuestra su mayor eficacia frente al ruido Gaussiano, logrando separar y eliminar el ruido aleatorio de manera óptima. Sin embargo, su rendimiento decae con ruidos dependientes de la señal (Speckle o Poisson), donde la limpieza es irregular según el brillo de la zona. El peor escenario es el ruido impulsivo (Sal y Pimienta), en el cual llega a empeorar la calidad de la imagen respecto a la imagen con ruido.
 
-```{r, echo=FALSE, fig.align='center', out.width="40%", fig.pos='H' , fig.show='hold',fig.ncol=2}
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.ncol=2}
 knitr::include_graphics(c(
   "resultados jose/objeto_vaca_gauss_comp_all.jpg",
-  "resultados jose/objeto_vaca_poisson_comp_all.jpg",
+  "resultados jose/objeto_vaca_poisson_comp_all.jpg"
+))
+```
+\vspace{0.5cm}
+```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.cap="Comparación visual de todos los tipos de ruido imagen de objeto",fig.show='hold',fig.ncol=2}
+knitr::include_graphics(c(
   "resultados jose/objeto_vaca_sp_comp_all.jpg",
   "resultados jose/objeto_vaca_speckle_comp_all.jpg"
 ))
 ```
-```{r, echo=FALSE, out.width="20%", fig.align='center'}
-knitr::include_graphics(
-  "resultados jose/tabla_bonita_vaca.png",
-)
+\vspace{0.5cm}
+
+```{r, echo=FALSE,  tab.cap="Comparación RMSE mínimo en cada tipo de ruido en imagen de objeto",tab.align='center'}
+
+tabla_datos <- read.csv("resultados jose/resultados_vaca.csv")
+library(knitr)
+library(kableExtra)
+
+kable(tabla_datos, 
+      digits = 6,
+      col.names = c("Ruido", "Nivel Óptimo", "RMSE Mínimo"),
+      booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), 
+                position = "center")
 ```
-En la tabla anterior, se puede observar como el mayor error en el proceso de eliminación de ruido se genera con los ruidos SyP y Poisson.
+En la _tabla 1_ se puede observar como el mayor error en el proceso de eliminación de ruido se genera con los ruidos Sal y Pimienta y Poisson.
 
 
-## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de SyP 
+## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de Sal y Pimienta 
 
-Un caso en el que el ruido SyP es especialmente molesto es en las imágenes del cielo nocturno ya que para el ordenador, una estrella y un punto de ruido son gemelos. Ambos son simples puntitos blancos sobre un fondo negro. Tienen la misma forma y tamaño.
+Un caso en el que el ruido Sal y Pimienta _figura 14_ es especialmente molesto en las imágenes del cielo nocturno ya que para el ordenador, una estrella y un punto de ruido son gemelos. Ambos son simples puntitos blancos sobre un fondo negro. Tienen la misma forma y tamaño.
 
-En estos casos, funciona mejor la estrategia "diag" que "all" debido a que, la estrategia "All"  intenta limpiar todos los detalles finos de la imagen, el ordenador se confunde y elimina demasiado, borrando los puntos de ruido, pero también las estrellas porque las interpreta como ruido. Al final, te queda una mancha borrosa sin estrellas.
-Sin embargo, la estrategia "Diag"es más suave (o menos estricta). Solo limpia el ruido en una dirección específica y deja lo demás. Al limpiar menos, las estrellas se salvan de ser borradas. Visualmente gana esta opción porque preferimos ver un cielo con estrellas (aunque tenga un poco de ruido) que no lograr ver prácticamente nada porque hemos perdido demasiada información relevante.
- 
-```{r, echo=FALSE, out.width="45%", fig.align='center', fig.show='hold'}
+En estos casos, funciona mejor la estrategia "diag" que "all" debido a que, la estrategia "all" intenta limpiar todos los detalles finos de la imagen, el ordenador se confunde y elimina demasiado, borrando los puntos de ruido, pero también las estrellas porque las interpreta como ruido. Al final, te queda una mancha borrosa sin estrellas.
+
+Sin embargo, la estrategia "diag" es más suave (o menos estricta). Solo limpia el ruido en una dirección específica y deja lo demás. Al limpiar menos, las estrellas se salvan de ser borradas. Visualmente gana esta opción porque preferimos ver un cielo con estrellas (aunque tenga un poco de ruido) que no lograr ver prácticamente nada porque hemos perdido demasiada información relevante.
+
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.align='center', fig.show='hold'}
 knitr::include_graphics(c(
   "resultados jose/cielo_noche_arboles_sp_comp_all.jpg",
-  "resultados jose/cielo_noche_arboles_sp_comp_diag.jpg",
+  "resultados jose/cielo_noche_arboles_sp_comp_diag.jpg"
+))
+```
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.cap="Comparación visual en cielo nocturno - Tipo de ruido Sal y Pimienta - Modos 'all' y 'diag'" ,fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
   "resultados jose/cielo_noche_sp_comp_all.jpg",
   "resultados jose/cielo_noche_sp_comp_diag.jpg"
 ))
 ```
-
+\vspace{1cm}
 ## 7.3 Comparación errores promedio 
 
-```{r, echo=FALSE, fig.align='center', fig.show='hold'}
+```{r, echo=FALSE, fig.align='center', out.width="90%", fig.pos="H" , fig.show='hold',fig.cap="Comparativa RMSE por Tipo de Ruido"}
 knitr::include_graphics(c(
   "resultados jose/grafico_comparativa_rmse.jpg"
 ))
 ```
 
-Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda.
+Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido _figura 15_ y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda en la mayoría de situaciones.
 
- 
+\vspace{0.5cm}
+
+# 8. Conclusión
+
+Este estudio demuestra que la Transformada Wavelet Discreta (DWT) es eficaz para eliminar ruido gaussiano, pero su rendimiento disminuye frente a ruidos dependientes de la señal o impulsivos como el Sal y Pimienta. Al comparar estrategias, se concluye que la eliminación total de coeficientes de detalle es decir la estrategia "all" es superior para minimizar el error numérico RMSE, aunque a costa de un suavizado excesivo que borra texturas. En contraste, la estrategia diagonal "diag" resulta mejor cuando se prioriza la preservación de detalles más finos, tal como se evidenció en imágenes complejas como la imagen del cielo nocturno _figura 13_.
