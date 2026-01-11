@@ -329,37 +329,96 @@ for (base_ej in bases) {
 
 ```
 
+```{r}
+# CONFIGURACIÓN
+target_base <- "objeto_vaca"  # El nombre clave de tu imagen (sin "clean_")
+wf <- "la8"
+max_lev <- 6
 
+# 1. Buscamos TODOS los archivos de ruido
+all_files <- list.files(carpeta_ruido, pattern="\\.jpg$", full.names=TRUE, ignore.case=TRUE)
 
+# 2. Filtramos: Nos quedamos SOLO con los archivos que contengan "objeto_vaca" en el nombre
+# (Esto asume que el archivo de ruido lleva el nombre de la imagen original dentro)
+files_vaca <- all_files[grep(target_base, all_files)]
 
+# Tabla para guardar resultados
+results_vaca <- data.frame(
+  ruido = character(),
+  opt_level = integer(),
+  rmse_min = double(),
+  stringsAsFactors = FALSE
+)
 
+# 3. Procesamos
+for (f in files_vaca) {
+  
+  # Extraemos info del nombre (asumiendo que tienes tu función parse_noise_file)
+  p <- parse_noise_file(f)
+  
+  # Verificación extra: si por algún motivo p$base no coincide, saltamos
+  if (p$base != target_base) next
+  
+  # Buscamos la original limpia
+  f_clean <- file.path(carpeta_clean, paste0("clean_", target_base, ".jpg"))
+  
+  if (!file.exists(f_clean)) {
+    message(paste("No encuentro la imagen limpia:", f_clean))
+    next
+  }
+  
+  # Cargar imágenes
+  img <- to_rgb(load.image(f_clean))
+  img_noise <- to_rgb(load.image(f))
+  
+  # 4. Calculamos SOLO la estrategia "ALL"
+  err_all <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="all")
+  
+  # Sacamos los datos
+  opt_level <- which.min(err_all)
+  min_rmse  <- min(err_all)
+  
+  # Guardamos
+  results_vaca <- rbind(results_vaca, data.frame(
+    ruido = p$noise,       # El tipo de ruido (gauss, speckle, etc.)
+    opt_level = opt_level,
+    rmse_min = min_rmse,
+    stringsAsFactors = FALSE
+  ))
+}
 
+# Mostramos la tabla ordenada
+knitr::kable(results_vaca, caption = paste("Resultados para", target_base, "con estrategia 'ALL'"))
+```
+```{r}
+# 1. LIMPIEZA PREVIA (Por si se quedó algo atascado)
+while (!is.null(dev.list())) dev.off()
 
+# 2. ASEGURAR QUE LA CARPETA EXISTE
+nombre_carpeta <- "resultados jose"
+if (!dir.exists(nombre_carpeta)) {
+  dir.create(nombre_carpeta)
+  message(paste("He creado la carpeta:", nombre_carpeta))
+}
 
+# 3. GUARDAR LA TABLA
+library(gridExtra)
+library(grid)
 
+# Definimos el nombre del archivo
+ruta_archivo <- file.path(nombre_carpeta, "tabla_conclusiones.png")
 
+# Abrimos el "lienzo"
+png(ruta_archivo, height = 400, width = 600)
 
+# Dibujamos
+grid.table(results_vaca) # Asegúrate de que tu tabla se llama 'results_vaca'
 
+# Cerramos para guardar
+dev.off()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+message(paste("✅ ¡Listo! Tabla guardada en:", ruta_archivo))
+```
 
 
 

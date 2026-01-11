@@ -365,8 +365,13 @@ knitr::include_graphics(c(
   "resultados jose/objeto_vaca_speckle_comp_all.jpg"
 ))
 ```
+```{r, echo=FALSE, out.width="20%", fig.align='center'}
+knitr::include_graphics(
+  "resultados jose/tabla_bonita_vaca.png",
+)
+```
 
-*Añadir aquí la tabla de los errores de esta imagen en estos 4 casos concretos unicamente*
+
 
 
 ## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de SyP 
