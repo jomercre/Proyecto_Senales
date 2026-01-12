@@ -349,7 +349,7 @@ El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables par
 
 \vspace{0.5cm}
 
-## 7. Resultados comparativos
+# 7. Resultados comparativos
 
 En este apartado, vamos a observar los casos más destacables que se han obtenido a partir de la recomposición de las 8 imágenes con el fin de obtener conclusiones generalizables.
 
@@ -473,6 +473,11 @@ Por otro lado, me gustaría destacar como al incrementar el nivel de la DWT util
 
 En nuestro estudio hemos intentado reducir el ruido de diferentes imágenes que han sido contaminadas de forma articial, es decir, cuya imagen sin ruido era conocida, lo que nos ha permitido utilizar el mínimo del RMSE entre la imagen limpia y la contaminada para elegir un modelo adecuado. No obstante, en los casos reales la imagen limpia no es conocida y solo poseemos la imagen contaminada. Por ello vamos a presentar una tabla que contenga la combinación de parámetros, nivel de la DWT (N_opt) y modo de eliminación de coeficientes (Mode) para cada tipo de ruido para cada una de las 4 categorías de imagen consideradas.
 
+```{r, echo=FALSE, out.width="49%", fig.cap="Combinaciones óptimas obtenidas para cada categoría de imagen" ,fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/tabla_comp.png"
+))
+```
 
 
 # 8. Conclusión
