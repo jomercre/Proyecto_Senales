@@ -413,6 +413,7 @@ knitr::include_graphics(c(
 ))
 ```
 \vspace{1cm}
+
 ## 7.3 Comparación errores promedio 
 
 ```{r, echo=FALSE, fig.align='center', out.width="90%", fig.pos="H" , fig.show='hold',fig.cap="Comparativa RMSE por Tipo de Ruido"}
@@ -425,6 +426,63 @@ Para poder hacer una comparación relevante, hemos calculado el RMSE promedio qu
 
 \vspace{0.5cm}
 
+## 7.4 Comparación en el tipo de imagen
+
+En anteriores apartados, se ha observado como la DWT funciona diferente cuando la sometemos a diferentes tipos de imágenes, así que para observar las diferencias vamos a comparar una imagen de cada tipo (día, noche, un objeto, múltiples objetos) para el ruido gaussiano en los modos _all_ y _diag_.
+
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/cielo_dia_luna_gauss_comp_all.jpg",
+  "resultados jose/cielo_noche_gauss_comp_all.jpg"
+))
+```
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.cap="Comparación de imágenes con composiciones distintas - Tipo de ruido Gaussiano - Modo 'all'" ,fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/objeto_gafas_gauss_comp_all.jpg",
+  "resultados jose/objetos_juguetes_gauss_comp_all.jpg"
+))
+```
+
+Lo primero que observarmos es como las imágenes alcanzan su reconstrucción óptima para niveles de la DWT distintos, mientras que las imágenes con objetos lo hacen en el nivel 2, las imágenes del cielo se quedan en los niveles 4 para el día y 3 para la noche. Esto se debe a que las imágenes del cielo suelen ser más monocromáticas por lo que aumentar el nivel de profundidad de la wavelet utilizada, es decir, perder calidad y confundir los contornos es favorable desde el punto de vista del error. Mientras que las imágenes con objetos suelen tener una gama de colores más varidada lo que lleva a que pequeñas variaciones en los contornos aumenten significativamente el RMSE.
+
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/cielo_dia_luna_gauss_comp_diag.jpg",
+  "resultados jose/cielo_noche_gauss_comp_diag.jpg"
+))
+```
+\vspace{0.5cm}
+```{r, echo=FALSE, out.width="49%", fig.cap="Comparación de imágenes con composiciones distintas - Tipo de ruido Gaussiano - Modo 'all'" ,fig.align='center', fig.show='hold'}
+knitr::include_graphics(c(
+  "resultados jose/objeto_gafas_gauss_comp_diag.jpg",
+  "resultados jose/objetos_juguetes_gauss_comp_diag.jpg"
+))
+```
+
+Al cambiar al modo de eliminación de ruido _diag_ observamos como el nivel al que alcanzan el óptimo las fotos con objetos se ve incrementado ligeramente en caso de tener pocas gamas de colores, es decir, en los casos donde solo hay un objeto. Por otro lado, las imágenes del cielo ven incrementado considerablemente el nivel de la DWT donde se alcanza el óptimo, obteniendo un incremento de un nivel tanto en el caso diurno como en el nocturno.
+
+
+Por otro lado, me gustaría destacar como al incrementar el nivel de la DWT utilizada se pierde más calidad, por lo que podríamos pensar que las imágenes con objetos están siendo mejor reconstruidas que las del cielo. No obstante, esto es simplemente un caso de utilizar una DWT de mayor nivel. Por tanto, no podemos llegar a una conclusión exacta de cual de las dos está obteniendo un mejor resultado, ya que las imágenes del cielo presenta un detrimiento considerable de la calidad y un menor ruido, mientras que las imágnes con objetos presentan un ruido considerable, pero mantienen una calidad aceptable.
+
+\vspace{0.5cm}
+
+## 7.5 Predicciones para imágenes contaminadas
+
+En nuestro estudio hemos intentado reducir el ruido de diferentes imágenes que han sido contaminadas de forma articial, es decir, cuya imagen sin ruido era conocida, lo que nos ha permitido utilizar el mínimo del RMSE entre la imagen limpia y la contaminada para elegir un modelo adecuado. No obstante, en los casos reales la imagen limpia no es conocida y solo poseemos la imagen contaminada. Por ello vamos a presentar una tabla que contenga la combinación de parámetros, nivel de la DWT (N_opt) y modo de eliminación de coeficientes (Mode) para cada tipo de ruido para cada una de las 4 categorías de imagen consideradas.
+
+
+
 # 8. Conclusión
 
 Este estudio demuestra que la Transformada Wavelet Discreta (DWT) es eficaz para eliminar ruido gaussiano, pero su rendimiento disminuye frente a ruidos dependientes de la señal o impulsivos como el Sal y Pimienta. Al comparar estrategias, se concluye que la eliminación total de coeficientes de detalle es decir la estrategia "all" es superior para minimizar el error numérico RMSE, aunque a costa de un suavizado excesivo que borra texturas. En contraste, la estrategia diagonal "diag" resulta mejor cuando se prioriza la preservación de detalles más finos, tal como se evidenció en imágenes complejas como la imagen del cielo nocturno _figura 13_.
+
+
+# Apéndice: Enlace al repositorio de github
+
+En este apartado vamos a presentar el enlace al repositorio de github utilizado donde se pueden encontrar las fotos utilizadas para el estudio, los programas desarrollados para realizar el análisis y los resultados obtenidos tanto en forma de imagen (carpeta resultado jose) como en forma de pdf (este documento).
+
+
+<https://github.com/jomercre/Proyecto_Senales.git>
