@@ -20,7 +20,10 @@ for (archivo in archivos) {
   img <- load.image(archivo)
   
   # Redimensionar (mismos px)
-  img_final <- resize(img, size_x = nuevo_ancho, size_y = nuevo_alto)
+  img_resized <- resize(img, size_x = nuevo_ancho, size_y = nuevo_alto)
+  
+  # Restamos el mínimo y dividimos por el rango. Esto garantiza matemáticamente [0, 1]
+  img_final <- (img_resized - min(img_resized)) / (max(img_resized) - min(img_resized))
   
   # Guardar imagen procesada
   nombre_archivo <- tools::file_path_sans_ext(basename(archivo))
