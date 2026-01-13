@@ -167,17 +167,17 @@ $$
 
 Donde J es el nivel de descomposición.
 
-En cada nivel de descomposición se obtiene un componente de aproximación (baja frecuencia) LL y tres de detalle (alta frecuencia) HL, LH y HH, a diferencia de en una dimensión donde solo se obtenía un coeficiente de aproximación y uno de detalle. Esta diferencia reside en que en dos dimensiones podemos aplicar un filtro distinto en cada dirección del espacio, lo que nos da lugar a las siguientes combinaciones:
+En cada nivel de descomposición se obtiene una componente de aproximación (baja frecuencia) LL y tres de detalle (alta frecuencia) HL, LH y HH, a diferencia de en una dimensión donde solo se obtenía un coeficiente de aproximación y uno de detalle. Esta diferencia reside en que en dos dimensiones podemos aplicar un filtro distinto en cada dirección del espacio, lo que nos da lugar a las siguientes combinaciones:
 
-+ Filtro paso bajo en las columnas y filtro paso bajo en las filas $\Longrightarrow$ LL
++ Filtro paso bajo en la dirección de las columnas y paso bajo en la de las filas $\Longrightarrow$ LL
 
-+ Filtro paso bajo en la dirección de las filas y paso alto en las columnas $\Longrightarrow$ LH
++ Filtro paso bajo en la dirección de las filas y paso alto en la de las columnas $\Longrightarrow$ LH
 
-+ Filtro paso alto en la dirección de las filas y paso bajo en las columnas $\Longrightarrow$ HL
++ Filtro paso alto en la dirección de las filas y paso bajo en la de las columnas $\Longrightarrow$ HL
 
-+ Filtro paso alto en la dirección de las filas y paso alto en las columnas $\Longrightarrow$ HH
++ Filtro paso alto en la dirección de las filas y paso alto en la de las columnas $\Longrightarrow$ HH
 
-Por ello, una forma directa de reducir el ruido es anular o atenuar los coeficientes de detalle y reconstruir la imagen de nuevo. Con el inconveniente de que al modificar los componentes de detalle se puede ver afectada la imagen (bordes y texturas).
+Por ello, una forma directa de reducir el ruido es anular o atenuar los coeficientes de detalle y reconstruir la imagen de nuevo. El único inconveniente que se tiene al anular dichas componentes de detalle la calidad de la imagen (bordes y texturas) se puede ver afectada considerablemente.
 
 ## 5.2. Estrategias usadas: all vs diag
 
@@ -493,7 +493,6 @@ knitr::include_graphics(c(
   "resultados jose/tabla_comp.png"
 ))
 ```
-
 
 # 8. Conclusión
 
