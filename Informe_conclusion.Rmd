@@ -1,6 +1,5 @@
 ---
-title: Eliminación de ruido en imágenes mediante transformada wavelet (DWT) sobre
-  imágenes sintéticas
+title: Eliminación de ruido en imágenes mediante la transformada wavelet discreta
 author:
 - '**Pol Reig Gómez** – **Pablo Carbonell Martínez** – **Joan Merlos Cremades**'
 - '**Héctor Torres Muñoz** – **Jóse Aguilar Milla**'
