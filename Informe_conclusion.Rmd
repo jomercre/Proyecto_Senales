@@ -206,7 +206,7 @@ $$
 
 ```{r, echo=FALSE, fig.align='center', fig.pos='H',fig.height=4, out.width="50%", fig.cap="Curva RMSE vs nivel con Ruido Gaussiano y metod = 'all'"}
 knitr::include_graphics(c(
-  "fotos_informe/cielo_dia_nubes_gauss_rmse_all.jpg"
+  "resultados jose/cielo_dia_nubes_gauss_rmse_all.jpg"
 ))
 ```
 
@@ -228,8 +228,8 @@ En la _figura 4_ se muestra las curvas RMSE en función del nivel _J_ para ambos
 
 ```{r, echo=FALSE, fig.align='center', out.width="49%" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Gaussiano y modos 'all' y 'diag'"}
 knitr::include_graphics(c(
-  "fotos_informe/cielo_dia_nubes_gauss_rmse_all.jpg",
-  "fotos_informe/cielo_dia_nubes_gauss_rmse_diag.jpg"
+  "resultados jose/cielo_dia_nubes_gauss_rmse_all.jpg",
+  "resultados jose/cielo_dia_nubes_gauss_rmse_diag.jpg"
 ))
 ```
 
@@ -264,8 +264,8 @@ En la _figura 6_ se muestra las curvas RMSE en función del nivel _J_ para ambos
 
 ```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos="H" , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Speckle y modos 'all' y 'diag'"}
 knitr::include_graphics(c(
-  "fotos_informe/cielo_dia_nubes_speckle_rmse_all.jpg",
-  "fotos_informe/cielo_dia_nubes_speckle_rmse_diag.jpg"
+  "resultados jose/cielo_dia_nubes_speckle_rmse_all.jpg",
+  "resultados jose/cielo_dia_nubes_speckle_rmse_diag.jpg"
 ))
 ```
 
@@ -302,8 +302,8 @@ En la _figura 8_ se muestra las curvas RMSE en función del nivel _J_ para ambos
 
 ```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Poisson y modos 'all' y 'diag'"}
 knitr::include_graphics(c(
-  "fotos_informe/cielo_dia_nubes_poisson_rmse_all.jpg",
-  "fotos_informe/cielo_dia_nubes_poisson_rmse_diag.jpg"
+  "resultados jose/cielo_dia_nubes_poisson_rmse_all.jpg",
+  "resultados jose/cielo_dia_nubes_poisson_rmse_diag.jpg"
 ))
 ```
 
@@ -340,8 +340,8 @@ En la _figura 10_ se muestra las curvas RMSE en función del nivel _J_ para ambo
 
 ```{r, echo=FALSE, fig.align='center', out.width="49%", fig.pos='H' , fig.show='hold',fig.cap="Curva RMSE vs Niveles DWT con Ruido Sal y Pimienta y modos 'all' y 'diag'"}
 knitr::include_graphics(c(
-  "fotos_informe/cielo_dia_nubes_sp_rmse_all.jpg",
-  "fotos_informe/cielo_dia_nubes_sp_rmse_diag.jpg"
+  "resultados jose/cielo_dia_nubes_sp_rmse_all.jpg",
+  "resultados jose/cielo_dia_nubes_sp_rmse_diag.jpg"
 ))
 ```
 
