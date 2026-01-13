@@ -7,7 +7,7 @@ author:
 date: "`r Sys.Date()`"
 output:
   pdf_document:
-    toc: false
+    toc: true
     number_sections: false
     extra_dependencies: float
   html_document:
@@ -38,7 +38,7 @@ El objetivo es evaluar la eficacia de la eliminación del ruido mediante uso de 
 
 Se ha realizado el proyecto con las siguiente condiciones:
 
-+ Datos de entrada: 8 fotos propias, preprocesadas y normalizadas en rangon [0,1].
++ Datos de entrada: 8 fotos propias, preprocesadas y normalizadas en rango [0,1].
 
 + Generación de ruido sintético con métodos: "gaussiano", "speckle", "poisson" y "sal y pimienta".
 
@@ -92,7 +92,7 @@ noisetype = "gaussian", noisetype = "poisson", noisetype = "impulse" (equivalent
 I_{\text{speckle}} = I + I \cdot n, \quad n \sim \mathcal{N}(0, \sigma^2)
 $$ y se aplica clipping para mantener los valores en [0,1].
 
-Para facilitar el procesamiento en batch y el emparejado automático clean/noisy, cada archivo generado sigue la convención: `'base'_gauss.jpg`, `'base'_speckle.jpg`, `'base'_poisson.jpg`, `'base'_sp.jpg` (sal y pimienta) donde `'base'` es el identificador de la imagen original (sin extensión). Esta convención es clave porque permite, a partir del nombre del archivo, recuperar qué imagen limpia corresponde (`clean_'base'.jpg`), y qué tipo de ruido se aplicó.
+Para facilitar el procesamiento en batch y el emparejado automático clean/noisy, cada archivo generado sigue la convención: `<nombre>_gauss.jpg`, `<nombre>_speckle.jpg`, `<nombre>_poisson.jpg`, `<nombre>_sp.jpg` (sal y pimienta) donde `<nombre>` es el identificador de la imagen original (sin extensión). Esta convención es clave porque permite, a partir del nombre del archivo, recuperar qué imagen limpia corresponde (`clean_<nombre>.jpg`), y qué tipo de ruido se aplicó.
 
 ## 4.1. Ruidos empleados
 
@@ -369,7 +369,7 @@ El tipo de ruido sal y pimienta de la _figura 11_ es de los menos favorables par
 
 En este apartado, vamos a observar los casos más destacables que se han obtenido a partir de la recomposición de las 8 imágenes con el fin de obtener conclusiones generalizables.
 
-## 7.1. Diferencia entre tipos de error
+## 7.1. Diferencia entre tipos de ruido
 
 A continuación vamos a comparar cómo afectan los diferentes tipos de ruido a la efectividad de la DWT a la hora de reconstruir las imágenes eliminando dicho ruido. Para ello hemos empleado una imagen aleatoria y le hemos aplicado  los diferentes tipos de ruido para luego reconstruirla en cada caso como podemos observar en la _figura 12_. 
 
@@ -405,8 +405,19 @@ kable(tabla_datos,
 ```
 En la _tabla 1_ se puede observar como el mayor error en el proceso de eliminación de ruido se genera con los ruidos Sal y Pimienta y Poisson.
 
+## 7.2. Estretegia "All" vs "Diag"
 
-## 7.2 Comparación de estrategias de eliminación de coeficientes en casos extremos de Sal y Pimienta 
+```{r, echo=FALSE, fig.align='center', out.width="90%", fig.pos="H" , fig.show='hold',fig.cap="Comparativa RMSE por Tipo de Ruido"}
+knitr::include_graphics(c(
+  "resultados jose/grafico_comparativa_rmse.jpg"
+))
+```
+
+Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido _figura 15_ y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda en la mayoría de situaciones. Aun así, analizar los casos específicos nos dará información muy valiosa, como veremos en la sección siguiente.
+
+\vspace{0.5cm}
+
+## 7.3. Comparación de estrategias de eliminación de coeficientes en casos extremos de Sal y Pimienta 
 
 Un caso en el que el ruido Sal y Pimienta _figura 14_ es especialmente molesto en las imágenes del cielo nocturno ya que para el ordenador, una estrella y un punto de ruido son gemelos. Ambos son simples puntitos blancos sobre un fondo negro. Tienen la misma forma y tamaño.
 
@@ -430,19 +441,7 @@ knitr::include_graphics(c(
 ```
 \vspace{1cm}
 
-## 7.3 Comparación errores promedio 
-
-```{r, echo=FALSE, fig.align='center', out.width="90%", fig.pos="H" , fig.show='hold',fig.cap="Comparativa RMSE por Tipo de Ruido"}
-knitr::include_graphics(c(
-  "resultados jose/grafico_comparativa_rmse.jpg"
-))
-```
-
-Para poder hacer una comparación relevante, hemos calculado el RMSE promedio que genera cada estrategia para cada tipo de ruido _figura 15_ y podemos apreciar que la estrategia "all" produce un error promedio para todos los tipos de ruido menor que la estrategia "diag", por lo que es preferible utilizar la primera a la segunda en la mayoría de situaciones.
-
-\vspace{0.5cm}
-
-## 7.4 Comparación en el tipo de imagen
+## 7.4. Comparación entre tipos de imagen
 
 En anteriores apartados, se ha observado como la DWT funciona diferente cuando la sometemos a diferentes tipos de imágenes, así que para observar las diferencias vamos a comparar una imagen de cada tipo (día, noche, un objeto, múltiples objetos) para el ruido gaussiano en los modos _all_ y _diag_.
 
@@ -461,7 +460,7 @@ knitr::include_graphics(c(
 ))
 ```
 
-Lo primero que observarmos es como las imágenes alcanzan su reconstrucción óptima para niveles de la DWT distintos, mientras que las imágenes con objetos lo hacen en el nivel 2, las imágenes del cielo se quedan en los niveles 4 para el día y 3 para la noche. Esto se debe a que las imágenes del cielo suelen ser más monocromáticas por lo que aumentar el nivel de profundidad de la wavelet utilizada, es decir, perder calidad y confundir los contornos es favorable desde el punto de vista del error. Mientras que las imágenes con objetos suelen tener una gama de colores más varidada lo que lleva a que pequeñas variaciones en los contornos aumenten significativamente el RMSE.
+Lo primero que observamos es como las imágenes alcanzan su reconstrucción óptima para niveles de la DWT distintos, mientras que las imágenes con objetos lo hacen en el nivel 2, las imágenes del cielo se quedan en los niveles 4 para el día y 3 para la noche. Esto se debe a que las imágenes del cielo suelen ser más monocromáticas por lo que aumentar el nivel de profundidad de la wavelet utilizada, es decir, perder calidad y confundir los contornos es favorable desde el punto de vista del error. Mientras que las imágenes con objetos suelen tener una gama de colores más varidada lo que lleva a que pequeñas variaciones en los contornos aumenten significativamente el RMSE.
 
 \vspace{0.5cm}
 ```{r, echo=FALSE, out.width="49%", fig.align='center', fig.show='hold'}
@@ -471,7 +470,7 @@ knitr::include_graphics(c(
 ))
 ```
 \vspace{0.5cm}
-```{r, echo=FALSE, out.width="49%", fig.cap="Comparación de imágenes con composiciones distintas - Tipo de ruido Gaussiano - Modo 'all'" ,fig.align='center', fig.show='hold'}
+```{r, echo=FALSE, out.width="49%", fig.cap="Comparación de imágenes con composiciones distintas - Tipo de ruido Gaussiano - Modo 'diag'" ,fig.align='center', fig.show='hold'}
 knitr::include_graphics(c(
   "resultados jose/objeto_gafas_gauss_comp_diag.jpg",
   "resultados jose/objetos_juguetes_gauss_comp_diag.jpg"
@@ -481,11 +480,11 @@ knitr::include_graphics(c(
 Al cambiar al modo de eliminación de ruido _diag_ observamos como el nivel al que alcanzan el óptimo las fotos con objetos se ve incrementado ligeramente en caso de tener pocas gamas de colores, es decir, en los casos donde solo hay un objeto. Por otro lado, las imágenes del cielo ven incrementado considerablemente el nivel de la DWT donde se alcanza el óptimo, obteniendo un incremento de un nivel tanto en el caso diurno como en el nocturno.
 
 
-Por otro lado, me gustaría destacar como al incrementar el nivel de la DWT utilizada se pierde más calidad, por lo que podríamos pensar que las imágenes con objetos están siendo mejor reconstruidas que las del cielo. No obstante, esto es simplemente un caso de utilizar una DWT de mayor nivel. Por tanto, no podemos llegar a una conclusión exacta de cual de las dos está obteniendo un mejor resultado, ya que las imágenes del cielo presenta un detrimiento considerable de la calidad y un menor ruido, mientras que las imágnes con objetos presentan un ruido considerable, pero mantienen una calidad aceptable.
+Por otro lado, destacamos como al incrementar el nivel de la DWT utilizada se pierde más calidad, por lo que podríamos pensar que las imágenes con objetos están siendo mejor reconstruidas que las del cielo. No obstante, esto es simplemente un caso de utilizar una DWT de mayor nivel. Por tanto, no podemos llegar a una conclusión exacta de cual de las dos está obteniendo un mejor resultado, ya que las imágenes del cielo presenta un detrimiento considerable de la calidad y un menor ruido, mientras que las imágenes con objetos presentan un ruido considerable, pero mantienen una calidad aceptable.
 
 \vspace{0.5cm}
 
-## 7.5 Predicciones para imágenes contaminadas
+## 7.5. Predicciones para imágenes contaminadas
 
 En nuestro estudio hemos intentado reducir el ruido de diferentes imágenes que han sido contaminadas de forma articial, es decir, cuya imagen sin ruido era conocida, lo que nos ha permitido utilizar el mínimo del RMSE entre la imagen limpia y la contaminada para elegir un modelo adecuado. No obstante, en los casos reales la imagen limpia no es conocida y solo poseemos la imagen contaminada. Por ello vamos a presentar una tabla que contenga la combinación de parámetros, nivel de la DWT (N_opt) y modo de eliminación de coeficientes (Mode) para cada tipo de ruido para cada una de las 4 categorías de imagen consideradas.
 
