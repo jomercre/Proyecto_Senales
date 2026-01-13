@@ -480,7 +480,7 @@ knitr::include_graphics(c(
 Al cambiar al modo de eliminación de ruido _diag_ observamos como el nivel al que alcanzan el óptimo las fotos con objetos se ve incrementado ligeramente en caso de tener pocas gamas de colores, es decir, en los casos donde solo hay un objeto. Por otro lado, las imágenes del cielo ven incrementado considerablemente el nivel de la DWT donde se alcanza el óptimo, obteniendo un incremento de un nivel tanto en el caso diurno como en el nocturno.
 
 
-Por otro lado, destacamos como al incrementar el nivel de la DWT utilizada se pierde más calidad, por lo que podríamos pensar que las imágenes con objetos están siendo mejor reconstruidas que las del cielo. No obstante, esto es simplemente un caso de utilizar una DWT de mayor nivel. Por tanto, no podemos llegar a una conclusión exacta de cual de las dos está obteniendo un mejor resultado, ya que las imágenes del cielo presenta un detrimiento considerable de la calidad y un menor ruido, mientras que las imágenes con objetos presentan un ruido considerable, pero mantienen una calidad aceptable.
+En resumen, la elección del nivel óptimo de DWT depende fundamentalmente del contenido de la imagen: mientras las escenas homogéneas (cielo) se benefician de descomposiciones más profundas para maximizar la eliminación de ruido, las escenas con objetos definidos requieren niveles más superficiales para preservar la información estructural crítica.
 
 \vspace{0.5cm}
 
