@@ -48,11 +48,14 @@ Se ha realizado el proyecto con las siguiente condiciones:
 
 # 3. Datos y preprocesado
 
-El conjunto de datos usado son 8 fotos propias, usadas como imágenes de partida limpias a partir de las cuales añadiremos el ruido en versiones sintéticas. Estas imágenes constituyen la referencia frente a la que se evalúa el error.
+En esta sección se detalla la procedencia del conjunto de datos y el tratamiento digital que se ha aplicado antes de la introducción del ruido sintético. La preparación de las imágenes ha sido un paso fundamental para asegurar la validez de los resultados posteriores.
 
-# 3.1. Flujo de preprocesado
+## 3.1. Descripción del conjunto de datos
 
-Primero las imágenes se someten a un preprocesamiento (implementado en _limpiar_fotos.Rmd_) donde se ajustan las imágenes a un formato común y se normalizan las intensidades al rango [0,1], para tener una misma estructura de canales y una escala común respectivamente. Al trabajar con imágenes en escala común las medidas de RMSE pueden compararse entre fotos y tipos de ruido, y la normalización evita que valores de intensidad fuera del rango marcado condicionen la DWT o la reconstrucción de las fotos. Finalmente se almacenan las imagenes preprocesadas en un directorio de salida (fotos_clean/) siguiendo una convención de nombres consistente (clean_<nombre>.jpg), que posteriormente facilita el emparejado con sus versiones ruidosas.
+El conjunto de datos ha constado de 8 imágenes originales capturadas por el equipo. Se han seleccionado dos categorías de imágenes para evaluar el comportamiento del filtrado ante diferentes tipos de detalle:
+
+* **Escenarios naturales (4 imágenes):** Incluyen capturas de cielos diurnos y nocturnos (`cielo_dia_nubes`, `cielo_noche`, etc.). Estas imágenes se caracterizan por presentar cambios de luz suaves y texturas naturales, lo que permite evaluar cómo se comporta el filtrado en zonas uniformes.
+* **Objetos (4 imágenes):** Incluyen elementos con bordes muy definidos y un contraste alto (`objeto_gafas`, `objeto_vaca`, `objetos_juguetes`). Estas imágenes son esenciales para comprobar si la técnica DWT es capaz de mantener los bordes de los objetos sin difuminarlos demasiado.
 
 ```{r fig-mosaico-clean, echo=FALSE, fig.show="hold", out.width="24%", fig.cap="Imágenes limpias.", fig.align="center"}
 knitr::include_graphics(c(
@@ -66,6 +69,19 @@ knitr::include_graphics(c(
   "fotos_clean/clean_objetos_mesa.jpg"
 ))
 ```
+## 3.2. Algoritmo de preprocesamiento y normalización
+
+Las imágenes originales presentaban resoluciones y niveles de luz muy diferentes entre sí. Para unificar el experimento, se ha diseñado e implementado un algoritmo de preprocesado en R. Las transformaciones que se han aplicado son las siguientes:
+
+1.  **Redimensionamiento:** Todas las imágenes se han reescalado a una resolución fija de **$1024 \times 1024$ píxeles**. Se ha elegido este tamaño por ser una potencia de 2 ($2^{10}$), lo cual resulta ideal para la Transformada Wavelet Discreta, ya que permite dividir la imagen sucesivamente hasta en 10 niveles sin problemas de bordes.
+
+2.  **Normalización de intensidad:** Se ha observado que algunas imágenes originales tenían poco contraste. Para corregir esto, se ha aplicado una transformación matemática a cada píxel para ajustar sus valores al intervalo $[0,1]$ mediante la siguiente fórmula:
+
+$$
+I_{norm} = \frac{I - \min(I)}{\max(I) - \min(I)}
+$$
+
+Con este proceso, se ajustan las imágenes a un formato común y se normalizan las intensidades al rango $[0,1]$, para tener una misma estructura de canales y una escala común respectivamente. Al trabajar con imágenes en escala común, las medidas de RMSE pueden compararse entre fotos y tipos de ruido, y la normalización evita que valores de intensidad fuera del rango marcado condicionen la DWT o la reconstrucción de las fotos. Finalmente, se almacenan las imágenes preprocesadas en un directorio de salida (`fotos_clean/`) siguiendo una convención de nombres consistente (`clean_<nombre>.jpg`), que posteriormente facilita el emparejado con sus versiones ruidosas.
 
 # 4. Generación de imágenes sintéticas con ruido
 
