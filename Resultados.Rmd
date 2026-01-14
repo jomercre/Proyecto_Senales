@@ -1,0 +1,432 @@
+---
+title: "Resultados"
+output: html_document
+---
+
+# Analísis de las imágenes
+
+```{r setup, message=FALSE, warning=FALSE}
+library(imager)
+library(waveslim)
+carpeta_clean <- "fotos_clean"
+carpeta_ruido <- "fotos_ruido"
+
+# Funcion para asegurar 3 canales
+
+to_rgb <- function(img){
+  if (spectrum(img) == 1) {
+    img <- imappend(list(img,img,img), axis = "c")
+  }
+  img
+}
+
+
+# Función para eliminar los coeficientes wavelet
+
+eliminate <- function(wR,wG,wB,mode) {
+  
+  if (mode == 'all') {
+    
+    for (j in 1:(length(wR)-1)) {
+    
+      wR[[j]] <- 0*wR[[j]]
+      wG[[j]] <- 0*wG[[j]]
+      wB[[j]] <- 0*wB[[j]]
+    
+    }
+  }
+  
+  else if (mode == 'diag') {
+    
+    for (j in 1:(length(wR)-1)) {
+      
+      if (j %% 3 == 0) {
+    
+        wR[[j]] <- 0*wR[[j]]
+        wG[[j]] <- 0*wG[[j]]
+        wB[[j]] <- 0*wB[[j]]
+      }
+    }
+    
+  }
+  
+  return(list(R = wR,G = wG,B = wB))
+}
+
+# Funcion de graficado del RMSE
+
+plot_err <- function(img,img_noise,max_lev=8,wf='la8',mode = 'all') {
+  
+  R_T <- img[,,,1]
+  G_T <- img[,,,2]
+  B_T <- img[,,,3]
+  
+  R <- img_noise[,,,1]
+  G <- img_noise[,,,2]
+  B <- img_noise[,,,3]
+  
+  err <- c()
+  
+  for (i in 1:max_lev) {
+    
+    wR <- dwt.2d(R, wf = wf, J = i)
+    wG <- dwt.2d(G, wf = wf, J = i)
+    wB <- dwt.2d(B, wf = wf, J = i)
+    
+    res <- eliminate(wR,wG,wB,mode)
+    
+    wR <- res$R
+    wG <- res$G
+    wB <- res$B
+    
+    R_rec <- idwt.2d(wR)
+    G_rec <- idwt.2d(wG)
+    B_rec <- idwt.2d(wB)
+      
+    err_R <- sum((R_T-R_rec)**2)
+    err_G <- sum((G_T-G_rec)**2)
+    err_B <- sum((B_T-B_rec)**2)
+    
+    err[i] <- (1/(3*nrow(R)*ncol(R))*(err_R+err_G+err_B))**0.5
+  }
+
+  plot(1:max_lev, err, col = 'red', 
+       xlab='Niveles de la DWT',ylab='RMSE', 
+       main=paste0('Error en función del nivel para wf = ',wf, 
+                   ' y modo = ', mode))
+}
+
+# Funcion de graficado de la reconstruccion
+
+plot_comp <- function(img,img_noise,opt_lev, wf='la8', mode = 'all') {
+  
+  R <- img_noise[,,,1]
+  G <- img_noise[,,,2]
+  B <- img_noise[,,,3]
+  
+  wR <- dwt.2d(R, wf = wf, J = opt_lev)
+  wG <- dwt.2d(G, wf = wf, J = opt_lev)
+  wB <- dwt.2d(B, wf = wf, J = opt_lev)
+    
+  res <- eliminate(wR,wG,wB,mode)
+    
+  wR <- res$R
+  wG <- res$G
+  wB <- res$B
+  
+  R_rec <- idwt.2d(wR)
+  G_rec <- idwt.2d(wG)
+  B_rec <- idwt.2d(wB)
+      
+  img_rec <- imappend(list(as.cimg(R_rec), as.cimg(G_rec),
+                         as.cimg(B_rec)), axis = "c")
+  
+  par(mfrow = c(2, 2), mar = c(1, 1, 1, 1))
+  plot(img, main='Original',axes=FALSE)
+  plot(img_noise, main='Con ruido',axes=FALSE)
+  plot(img_rec, main= 'DWT óptima',axes=FALSE)
+}
+
+
+# Obtención del RMSE
+
+get_err <- function(img,img_noise,max_lev=8,wf='la8',mode='all') {
+  
+  R_T <- img[,,,1]; G_T <- img[,,,2]; B_T <- img[,,,3]
+  R <- img_noise[,,,1]; G <- img_noise[,,,2]; B <- img_noise[,,,3]
+  
+  err <- numeric(max_lev)
+  
+  for (i in 1:max_lev) {
+    wR <- dwt.2d(R, wf = wf, J = i)
+    wG <- dwt.2d(G, wf = wf, J = i)
+    wB <- dwt.2d(B, wf = wf, J = i)
+    
+    res <- eliminate(wR,wG,wB,mode)
+    R_rec <- idwt.2d(res$R)
+    G_rec <- idwt.2d(res$G)
+    B_rec <- idwt.2d(res$B)
+    
+    err_R <- sum((R_T-R_rec)^2)
+    err_G <- sum((G_T-G_rec)^2)
+    err_B <- sum((B_T-B_rec)^2)
+    
+    err[i] <- sqrt((err_R + err_G + err_B)/(3*nrow(R)*ncol(R)))
+  }
+  
+  err
+}
+
+# Parseo de nombres ruido -> base / noise
+
+parse_noise_file <- function(path){
+  name <- tools::file_path_sans_ext(basename(path))
+  noise <- sub(".*_(gauss|sp|poisson|speckle)$", "\\1", name)
+  base  <- sub("_(gauss|sp|poisson|speckle)$", "", name)
+  list(base=base, noise=noise, name=name)
+}
+
+```
+
+Aplicamos `plot_err`/`plot_comp` (con `opt_lev` calculado) a todas las imágenes
+
+```{r}
+max_lev <- 6
+wf <- "la8"
+
+files_ruido <- list.files(carpeta_ruido, pattern="\\.jpg$", full.names=TRUE, ignore.case=TRUE)
+
+# Tabla donde guardaremos resultados por imagen-ruido
+results <- data.frame(
+  base=character(), noise=character(),
+  opt_all=integer(), rmse_min_all=double(),
+  opt_diag=integer(), rmse_min_diag=double(),
+  stringsAsFactors = FALSE
+)
+
+for (f in files_ruido) {
+  p <- parse_noise_file(f)
+  f_clean <- file.path(carpeta_clean, paste0("clean_", p$base, ".jpg"))
+  if (!file.exists(f_clean)) next
+  
+  img <- to_rgb(load.image(f_clean))
+  img_noise <- to_rgb(load.image(f))
+  
+  # Curvas (numéricas) usando lo de Joan
+  err_all  <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="all")
+  err_diag <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="diag")
+  
+  # Nivel óptimo por modo
+  opt_all  <- which.min(err_all)
+  opt_diag <- which.min(err_diag)
+  
+  results <- rbind(
+    results,
+    data.frame(
+      base=p$base, noise=p$noise,
+      opt_all=opt_all,   rmse_min_all=min(err_all),
+      opt_diag=opt_diag, rmse_min_diag=min(err_diag),
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+results
+```
+
+Generamos las gráficas del RMSE y la reconstuccion para cada imagen del directorio fotos_ruido.
+
+```{r}
+dir_out <- "resultados"
+if (!dir.exists(dir_out)) dir.create(dir_out)
+
+# Iteramos sobre todas las bases
+bases <- unique(results$base)
+
+for (base_ej in bases) {
+
+  for (nz in c("gauss","sp","poisson","speckle")) {
+    f_clean <- file.path(carpeta_clean, paste0("clean_", base_ej, ".jpg"))
+    f_noisy <- file.path(carpeta_ruido, paste0(base_ej, "_", nz, ".jpg"))
+    if (!file.exists(f_clean) || !file.exists(f_noisy)) next
+
+    img <- to_rgb(load.image(f_clean))
+    img_noise <- to_rgb(load.image(f_noisy))
+
+    # Recuperar óptimos 
+    opt_all  <- results$opt_all [results$base==base_ej & results$noise==nz][1]
+    opt_diag <- results$opt_diag[results$base==base_ej & results$noise==nz][1]
+
+    oldpar <- par(no.readonly = TRUE)
+    on.exit(par(oldpar), add = TRUE)
+
+    # 1) Curva RMSE (all) 
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_all.jpg")),
+         width=8, height=5, units="in", res=300)
+      par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+      plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all"),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
+    par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+    plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "all")
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all"),
+          outer = TRUE, cex = 1)
+
+
+    # 2) Curva RMSE (diag) 
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_rmse_diag.jpg")),
+         width=8, height=5, units="in", res=300)
+      par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+      plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag"),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
+    par(mfrow = c(1,1), mar = c(5,4,4,2) + 0.1, oma = c(0,0,2,0))
+    plot_err(img, img_noise, max_lev = max_lev, wf = wf, mode = "diag")
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag"),
+          outer = TRUE, cex = 1)
+
+
+    # 3) Comparación (all) 
+    par(oldpar)
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_all.jpg")),
+         width=8, height=6, units="in", res=300)
+      par(oma = c(0,0,2,0))
+      plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
+    par(oma = c(0,0,2,0))
+    plot_comp(img, img_noise, opt_lev = opt_all, wf = wf, mode = "all")
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: all | opt_lev: ", opt_all),
+          outer = TRUE, cex = 1)
+
+
+    # 4) Comparación (diag) - plot separado + ruido y modo
+    par(oldpar)
+    #jpg
+    jpeg(file.path(dir_out, paste0(base_ej,"_",nz,"_comp_diag.jpg")),
+         width=8, height=6, units="in", res=300)
+      par(oma = c(0,0,2,0))
+      plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
+      mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
+            outer = TRUE, cex = 1)
+    dev.off()
+
+    #rmd
+    par(oma = c(0,0,2,0))
+    plot_comp(img, img_noise, opt_lev = opt_diag, wf = wf, mode = "diag")
+    mtext(paste0("Base: ", base_ej, " | Ruido: ", nz, " | Modo: diag | opt_lev: ", opt_diag),
+          outer = TRUE, cex = 1)
+  }
+
+}
+
+```
+
+
+# Diferencia entre tipos de ruido
+
+Utilizamos la imagen de la vaca para ver como afectan los diferentes ruidos a una misma imagen.
+
+```{r}
+target_base <- "objeto_vaca"  
+wf <- "la8"
+max_lev <- 6
+
+all_files <- list.files(carpeta_ruido, pattern="\\.jpg$", full.names=TRUE, ignore.case=TRUE)
+
+files_vaca <- all_files[grep(target_base, all_files)]
+
+results_vaca <- data.frame(
+  ruido = character(),
+  opt_level = integer(),
+  rmse_min = double(),
+  stringsAsFactors = FALSE
+)
+
+# 3. Procesamos
+for (f in files_vaca) {
+    p <- parse_noise_file(f)
+  
+  if (p$base != target_base) next
+  
+  f_clean <- file.path(carpeta_clean, paste0("clean_", target_base, ".jpg"))
+  
+  if (!file.exists(f_clean)) {
+    message(paste("No encuentro la imagen limpia:", f_clean))
+    next
+  }
+  
+  img <- to_rgb(load.image(f_clean))
+  img_noise <- to_rgb(load.image(f))
+  
+  err_all <- get_err(img, img_noise, max_lev=max_lev, wf=wf, mode="all")
+  
+  opt_level <- which.min(err_all)
+  min_rmse  <- min(err_all)
+  
+  results_vaca <- rbind(results_vaca, data.frame(
+    ruido = p$noise,       
+    opt_level = opt_level,
+    rmse_min = min_rmse,
+    stringsAsFactors = FALSE
+  ))
+}
+
+archivo_salida <- file.path("resultados", "resultados_vaca.csv")
+    write.csv(results_vaca, archivo_salida, row.names = FALSE)
+
+knitr::kable(results_vaca, caption = paste("Resultados para", target_base, "con estrategia 'ALL'"))
+```
+
+# Grafico de barras del RMSE promedio
+
+Comparamos para la imagen de la vaca el valor del RMSE al reconstruir la imagen con el modo all y con el modo diag.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+datos_grafico <- results %>%
+  group_by(noise) %>%
+  summarise(
+    All = mean(rmse_min_all, na.rm = TRUE),
+    Diag = mean(rmse_min_diag, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = c("All", "Diag"),
+    names_to = "Estrategia",
+    values_to = "RMSE_Promedio"
+  )
+
+ggplot(datos_grafico, aes(x = noise, y = RMSE_Promedio, fill = Estrategia)) +
+  geom_col(position = "dodge", width = 0.7, color = "black") + 
+  
+  geom_text(aes(label = round(RMSE_Promedio, 2)), 
+            position = position_dodge(width = 0.7), 
+            vjust = -0.5, size = 3.5) +
+  
+
+  scale_fill_manual(values = c("All" = "#4E84C4", "Diag" = "#D16103")) + 
+  theme_minimal() +
+  labs(
+    title = "Comparativa de Error Promedio (RMSE) por Tipo de Ruido",
+    subtitle = "Estrategia 'All' vs 'Diag'",
+    x = "Tipo de Ruido",
+    y = "RMSE Promedio",
+    fill = "Estrategia"
+  ) +
+  theme(
+    legend.position = "top", 
+    axis.text.x = element_text(size = 11, face = "bold"),
+    plot.title = element_text(hjust = 0.5) 
+  )
+
+carpeta_destino <- "resultados"
+nombre_archivo <- "grafico_comparativa_rmse.jpg"
+ruta_completa <- file.path(carpeta_destino, nombre_archivo)
+
+if (!dir.exists(carpeta_destino)) {
+  dir.create(carpeta_destino)
+}
+
+ggsave(
+  filename = ruta_completa,
+  width = 8,       
+  height = 5,     
+  units = "in",
+  dpi = 300        
+)
+```
