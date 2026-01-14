@@ -4,7 +4,7 @@ de Señales del Máster en Ciencia de Datos de la UV.
 El proyecto ha consistido en la eliminación de diferentes tipos de ruido en imágenes mediante el uso de la Transformada Wavelet Discreta o DWT, para ello se han generado diferentes archivos RMD cada uno de ellos
 con la intención de realizar una función concreta.
 
-- Preprocesado_Imagenes.Rmd -> prepara las imágenes que se encuentran en la carpeta fotos_raw para poder ser analizadas. El proceso consiste en reducir las imágenes a 1024x1024 píxeles, conseguir que las diferentes
+- Preprocesado_imagenes.Rmd -> prepara las imágenes que se encuentran en la carpeta fotos_raw para poder ser analizadas. El proceso consiste en reducir las imágenes a 1024x1024 píxeles, conseguir que las diferentes
   imágenes tengan el mismo rango de valores para las bandas R, G y B y, finalmente, guardar los resultados en la carpeta fotos_clean.
 
 - Fotos_Ruido.Rmd -> utiliza las imágenes de la carpeta fotos_clean y les introduce de forma sintética el mismo tipo de ruido en cada una de sus bandas de color. Los ruidos considerados han sido el Gaussiano, el
