@@ -16,4 +16,4 @@ con la intención de realizar una función concreta.
   considerada y una gráfica con la imagen limpia, la imagen con ruido y la recomposición óptima utilizando DWT, es decir, aquella con menor RMSE. Cabe destacar que dichas imágenes se ven duplicadas porqué se han
   realizado dos formas de eliminación del ruido diferentes una en la que solo se eliminan los coeficientes HH (diag) y otra en la que se eliminan los coeficientes HH, HL y LH (all).
 
-- Informe.Rmd -> es un archivo que contiene el procedimiento realizado para desarrollar este proyecto en conjunto con las diferentes conclusiones obtenidas.
+- Informe_AS.pdf -> es un archivo que contiene el procedimiento realizado para desarrollar este proyecto en conjunto con las diferentes conclusiones obtenidas.
